@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { GitHubRepository } from '../../../shared/types/auth';
+import { Button } from '@/components/ui/button';
+import { Search, GitBranch, Lock, Globe } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RepositoryPickerProps {
   onSelect?: (repository: GitHubRepository) => void;
@@ -50,188 +53,118 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({
         newSelection.add(repo.id);
       }
       setSelectedRepos(newSelection);
-    } else {
-      setSelectedRepos(new Set([repo.id]));
-      onSelect?.(repo);
     }
+    onSelect?.(repo);
   };
   
-  const filteredRepos = repositories.filter(repo => 
+  const filteredRepos = repositories.filter(repo =>
     repo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    repo.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    repo.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   if (!currentInstallation) {
     return (
-      <div className="repository-picker empty">
-        <p>Please select an installation first</p>
+      <div className="rounded-lg border border-dashed p-8 text-center">
+        <p className="text-muted-foreground">
+          Select an installation to view repositories
+        </p>
       </div>
     );
   }
   
   if (isLoading) {
     return (
-      <div className="repository-picker loading">
-        <div className="spinner"></div>
-        <p>Loading repositories...</p>
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="mb-2 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <p className="text-sm text-muted-foreground">Loading repositories...</p>
+        </div>
       </div>
     );
   }
   
   if (error) {
     return (
-      <div className="repository-picker error">
-        <p>{error}</p>
-        <button onClick={loadRepos} className="retry-button">
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm text-destructive">{error}</p>
+        <Button onClick={loadRepos} variant="outline" size="sm" className="mt-2">
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
   
   return (
-    <div className="repository-picker">
-      <div className="repository-search">
+    <div>
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           placeholder="Search repositories..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
+          className="w-full rounded-md border bg-background px-10 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
         />
-        <svg 
-          className="search-icon" 
-          width="16" 
-          height="16" 
-          viewBox="0 0 16 16"
-        >
-          <path 
-            d="M11.5 7a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM10.06 10.06l3.88 3.88"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </svg>
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+          {filteredRepos.length} of {repositories.length}
+        </span>
       </div>
       
-      <div className="repository-list">
+      <div className="space-y-2 max-h-96 overflow-y-auto">
         {filteredRepos.length === 0 ? (
-          <p className="no-results">No repositories found</p>
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">
+              {searchTerm ? 'No repositories match your search' : 'No repositories found'}
+            </p>
+          </div>
         ) : (
           filteredRepos.map((repo) => (
-            <div
+            <button
               key={repo.id}
-              className={`repository-item ${
-                selectedRepos.has(repo.id) ? 'selected' : ''
-              }`}
               onClick={() => handleSelect(repo)}
-            >
-              {multiSelect && (
-                <input
-                  type="checkbox"
-                  checked={selectedRepos.has(repo.id)}
-                  onChange={() => handleSelect(repo)}
-                  className="repo-checkbox"
-                />
+              className={cn(
+                "w-full rounded-lg border p-4 text-left transition-colors hover:bg-accent",
+                selectedRepos.has(repo.id) && "border-primary bg-accent"
               )}
-              
-              <div className="repo-info">
-                <div className="repo-header">
-                  <span className="repo-name">{repo.name}</span>
-                  {repo.private && (
-                    <span className="repo-badge private">Private</span>
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <GitBranch className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{repo.name}</span>
+                    {repo.private ? (
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    ) : (
+                      <Globe className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
+                  {repo.description && (
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                      {repo.description}
+                    </p>
                   )}
-                  {repo.archived && (
-                    <span className="repo-badge archived">Archived</span>
-                  )}
+                  <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                    {repo.language && (
+                      <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-primary"></span>
+                        {repo.language}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                
-                {repo.description && (
-                  <p className="repo-description">{repo.description}</p>
+                {multiSelect && (
+                  <input
+                    type="checkbox"
+                    checked={selectedRepos.has(repo.id)}
+                    onChange={() => {}}
+                    className="ml-4 h-4 w-4 rounded border-gray-300"
+                  />
                 )}
-                
-                <div className="repo-meta">
-                  {repo.language && (
-                    <span className="repo-language">
-                      <span 
-                        className="language-color" 
-                        style={{ backgroundColor: getLanguageColor(repo.language) }}
-                      />
-                      {repo.language}
-                    </span>
-                  )}
-                  
-                  <span className="repo-updated">
-                    Updated {formatDate(repo.updated_at)}
-                  </span>
-                </div>
               </div>
-            </div>
+            </button>
           ))
         )}
       </div>
-      
-      {multiSelect && selectedRepos.size > 0 && (
-        <div className="repository-actions">
-          <button 
-            className="select-button"
-            onClick={() => {
-              const selected = repositories.filter(r => selectedRepos.has(r.id));
-              selected.forEach(repo => onSelect?.(repo));
-            }}
-          >
-            Select {selectedRepos.size} {selectedRepos.size === 1 ? 'repository' : 'repositories'}
-          </button>
-        </div>
-      )}
     </div>
   );
 };
-
-function getLanguageColor(language: string): string {
-  const colors: Record<string, string> = {
-    TypeScript: '#2b7489',
-    JavaScript: '#f1e05a',
-    Python: '#3572A5',
-    Java: '#b07219',
-    Go: '#00ADD8',
-    Rust: '#dea584',
-    Ruby: '#701516',
-    PHP: '#4F5D95',
-    'C++': '#f34b7d',
-    C: '#555555',
-    'C#': '#178600',
-    Swift: '#FA7343',
-    Kotlin: '#A97BFF',
-    Dart: '#00B4AB',
-    Vue: '#41b883',
-    React: '#61dafb',
-  };
-  
-  return colors[language] || '#586069';
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) {
-    return 'today';
-  } else if (diffDays === 1) {
-    return 'yesterday';
-  } else if (diffDays < 7) {
-    return `${diffDays} days ago`;
-  } else if (diffDays < 30) {
-    const weeks = Math.floor(diffDays / 7);
-    return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
-  } else if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30);
-    return `${months} ${months === 1 ? 'month' : 'months'} ago`;
-  } else {
-    const years = Math.floor(diffDays / 365);
-    return `${years} ${years === 1 ? 'year' : 'years'} ago`;
-  }
-}

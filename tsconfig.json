@@ -13,7 +13,12 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "strict": false
+    "strict": false,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"]
+    }
   },
   "include": [
     "src/**/*"
