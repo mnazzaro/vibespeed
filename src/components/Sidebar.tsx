@@ -5,6 +5,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/renderer/store/auth';
+import { useTaskStore } from '@/renderer/store/tasks';
+import { TaskList } from '@/renderer/components/Tasks/TaskList';
+import { TaskCreator } from '@/renderer/components/Tasks/TaskCreator';
 
 interface Installation {
   id: number;
@@ -23,6 +26,7 @@ interface Installation {
 
 export const Sidebar: React.FC = () => {
   const { installations, currentInstallation, isAuthenticated, user, loadRepositories, selectInstallation, logout } = useAuthStore();
+  const { startTaskCreation, cancelTaskCreation, isCreatingTask } = useTaskStore();
   const [expandedInstallations, setExpandedInstallations] = useState<Set<number>>(new Set());
   const [installationRepos, setInstallationRepos] = useState<Record<number, any[]>>({});
   const [loadingRepos, setLoadingRepos] = useState<Set<number>>(new Set());
@@ -80,23 +84,37 @@ export const Sidebar: React.FC = () => {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {isAuthenticated ? (
-          <div className="space-y-2">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xs font-semibold uppercase text-muted-foreground">
-                  GitHub Installations
-                </h2>
-                <Button
-                  onClick={handleAddInstallation}
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-              </div>
+          <div className="space-y-4">
+            {/* Tasks Section */}
+            <div className="pb-4 border-b">
+              {isCreatingTask ? (
+                <TaskCreator
+                  onCancel={cancelTaskCreation}
+                  onComplete={cancelTaskCreation}
+                />
+              ) : (
+                <TaskList onCreateClick={startTaskCreation} />
+              )}
             </div>
+            
+            {/* GitHub Installations Section */}
+            <div className="space-y-2">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xs font-semibold uppercase text-muted-foreground">
+                    GitHub Installations
+                  </h2>
+                  <Button
+                    onClick={handleAddInstallation}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </div>
             
             {installations?.map((installation) => (
               <Collapsible
@@ -155,9 +173,10 @@ export const Sidebar: React.FC = () => {
               </Collapsible>
             ))}
             
-            {!installations?.length && (
-              <p className="text-sm text-muted-foreground">No installations found</p>
-            )}
+              {!installations?.length && (
+                <p className="text-sm text-muted-foreground">No installations found</p>
+              )}
+            </div>
           </div>
         ) : (
           <div className="text-center">

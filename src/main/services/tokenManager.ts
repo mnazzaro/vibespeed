@@ -13,9 +13,17 @@ interface StoreSchema {
   lastUpdated?: number;
 }
 
+interface StoreInstance {
+  get(key: 'encryptedData'): string | undefined;
+  get(key: 'lastUpdated'): number | undefined;
+  set(key: 'encryptedData', value: string): void;
+  set(key: 'lastUpdated', value: number): void;
+  clear(): void;
+}
+
 export class TokenManager {
   private static instance: TokenManager;
-  private store: Store<StoreSchema>;
+  private store: StoreInstance;
   private memoryCache: Map<string, AuthToken>;
   private refreshTimers: Map<number, NodeJS.Timeout>;
   
@@ -23,7 +31,7 @@ export class TokenManager {
     this.store = new Store<StoreSchema>({
       name: 'vibespeed-auth',
       encryptionKey: this.getEncryptionKey(),
-    });
+    }) as unknown as StoreInstance;
     this.memoryCache = new Map();
     this.refreshTimers = new Map();
   }

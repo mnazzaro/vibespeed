@@ -9,6 +9,13 @@ import type {
   AuthToken,
   UserProfile
 } from './shared/types/auth';
+import type {
+  Task,
+  CreateTaskParams,
+  TaskIPCResponse,
+  ChatMessage,
+  WorktreeProgress
+} from './shared/types/tasks';
 
 // Define the API that will be exposed to the renderer
 const authAPI = {
@@ -103,16 +110,75 @@ const appAPI = {
   },
 };
 
+// Define task API
+const tasksAPI = {
+  create: async (params: CreateTaskParams): Promise<TaskIPCResponse<Task>> => {
+    return await ipcRenderer.invoke('task:create', params);
+  },
+  
+  list: async (): Promise<TaskIPCResponse<{ tasks: Task[], activeTaskId: string | null }>> => {
+    return await ipcRenderer.invoke('task:list');
+  },
+  
+  get: async (taskId: string): Promise<TaskIPCResponse<Task>> => {
+    return await ipcRenderer.invoke('task:get', taskId);
+  },
+  
+  update: async (taskId: string, updates: Partial<Task>): Promise<TaskIPCResponse<Task>> => {
+    return await ipcRenderer.invoke('task:update', taskId, updates);
+  },
+  
+  delete: async (taskId: string): Promise<TaskIPCResponse<void>> => {
+    return await ipcRenderer.invoke('task:delete', taskId);
+  },
+  
+  setActive: async (taskId: string): Promise<TaskIPCResponse<void>> => {
+    return await ipcRenderer.invoke('task:setActive', taskId);
+  },
+  
+  setupWorktrees: async (taskId: string): Promise<TaskIPCResponse<void>> => {
+    return await ipcRenderer.invoke('task:setupWorktrees', taskId);
+  },
+  
+  sendMessage: async (taskId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<TaskIPCResponse<ChatMessage>> => {
+    return await ipcRenderer.invoke('task:sendMessage', taskId, message);
+  },
+  
+  openInExplorer: async (taskId: string): Promise<TaskIPCResponse<void>> => {
+    return await ipcRenderer.invoke('task:openInExplorer', taskId);
+  },
+  
+  openInEditor: async (taskId: string, repositoryName: string): Promise<TaskIPCResponse<void>> => {
+    return await ipcRenderer.invoke('task:openInEditor', taskId, repositoryName);
+  },
+  
+  // Event listeners
+  onWorktreeProgress: (callback: (progress: WorktreeProgress) => void) => {
+    ipcRenderer.on('task:worktree-progress', (event, progress) => callback(progress));
+  },
+  
+  onMessageReceived: (callback: (taskId: string, message: ChatMessage) => void) => {
+    ipcRenderer.on('task:message-received', (event, taskId, message) => callback(taskId, message));
+  },
+  
+  removeTaskListeners: () => {
+    ipcRenderer.removeAllListeners('task:worktree-progress');
+    ipcRenderer.removeAllListeners('task:message-received');
+  },
+};
+
 // Expose the API to the renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
   auth: authAPI,
   app: appAPI,
+  tasks: tasksAPI,
 });
 
 // Type definitions for TypeScript
 export type ElectronAPI = {
   auth: typeof authAPI;
   app: typeof appAPI;
+  tasks: typeof tasksAPI;
 };
 
 declare global {

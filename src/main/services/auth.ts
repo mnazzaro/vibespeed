@@ -309,7 +309,7 @@ export class AuthService {
       token: data.token,
       expiresAt: new Date(data.expires_at),
       permissions: data.permissions,
-      repositories: data.repositories,
+      repositories: data.repositories as GitHubRepository[],
       installation,
     };
   }
@@ -318,6 +318,16 @@ export class AuthService {
     const newToken = await this.createInstallationToken(installationId);
     await tokenManager.saveInstallationToken(installationId, newToken);
     return newToken;
+  }
+  
+  public async getInstallationToken(installationId: number): Promise<string | null> {
+    try {
+      const token = await this.getOrCreateInstallationToken(installationId);
+      return token.token;
+    } catch (error) {
+      console.error('Failed to get installation token:', error);
+      return null;
+    }
   }
   
   public async getRepositories(installationId: number): Promise<GitHubRepository[]> {
