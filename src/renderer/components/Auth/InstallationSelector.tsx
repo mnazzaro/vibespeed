@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/auth';
 import { GitHubInstallation } from '../../../shared/types/auth';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChevronDown, RefreshCw, Check, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export const InstallationSelector: React.FC = () => {
   const { 
@@ -14,10 +18,8 @@ export const InstallationSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Auto-refresh installations when window gains focus
   useEffect(() => {
     const handleFocus = async () => {
-      // Only refresh if we don't have installations
       if (!installations || installations.length === 0) {
         setIsRefreshing(true);
         await refreshAuth();
@@ -43,30 +45,21 @@ export const InstallationSelector: React.FC = () => {
   
   if (!installations || installations.length === 0) {
     return (
-      <div className="installation-selector empty">
-        <p>No GitHub App installations found.</p>
-        <div className="installation-actions">
-          <a 
-            href="#" 
-            onClick={handleInstallClick}
-            className="install-link"
-          >
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8">
+        <p className="mb-4 text-muted-foreground">No GitHub App installations found.</p>
+        <div className="flex gap-2">
+          <Button onClick={handleInstallClick} variant="default">
+            <ExternalLink className="mr-2 h-4 w-4" />
             Install GitHub App
-          </a>
-          <button
+          </Button>
+          <Button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="refresh-button"
-            title="Refresh installations"
+            variant="outline"
+            size="icon"
           >
-            {isRefreshing ? (
-              <span className="spinner small"></span>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M13.65 2.35a8 8 0 10-.704 11.746l-1.06-1.06A6.5 6.5 0 112.35 3.65l1.06-1.06a8 8 0 0111.296.704zM8 3a.75.75 0 01.75.75v3.5h3.5a.75.75 0 010 1.5h-4.25A.75.75 0 017.25 8V3.75A.75.75 0 018 3z"/>
-              </svg>
-            )}
-          </button>
+            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+          </Button>
         </div>
       </div>
     );
@@ -78,91 +71,83 @@ export const InstallationSelector: React.FC = () => {
   };
   
   return (
-    <div className="installation-selector">
-      <div className="installation-selector-header">
-        <button 
-          className="installation-selector-trigger"
+    <div className="relative">
+      <div className="flex gap-2">
+        <Button
+          className="w-full justify-between"
+          variant="outline"
           onClick={() => setIsOpen(!isOpen)}
           disabled={isLoading}
         >
           {currentInstallation ? (
-            <div className="selected-installation">
-              <img 
-                src={currentInstallation.account.avatar_url} 
-                alt={currentInstallation.account.login}
-                className="installation-avatar"
-              />
-              <span className="installation-name">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage 
+                  src={currentInstallation.account.avatar_url} 
+                  alt={currentInstallation.account.login}
+                />
+                <AvatarFallback>
+                  {currentInstallation.account.login[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium">
                 {currentInstallation.account.login}
               </span>
-              <span className="installation-type">
+              <span className="text-xs text-muted-foreground">
                 ({currentInstallation.account.type})
               </span>
             </div>
           ) : (
             <span>Select Installation</span>
           )}
-          <svg 
-            className={`dropdown-arrow ${isOpen ? 'open' : ''}`}
-            width="12" 
-            height="8" 
-            viewBox="0 0 12 8"
-          >
-            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </button>
+          <ChevronDown className={cn(
+            "h-4 w-4 transition-transform",
+            isOpen && "rotate-180"
+          )} />
+        </Button>
         
-        <button
+        <Button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="refresh-button icon-only"
-          title="Refresh installations"
+          variant="outline"
+          size="icon"
         >
-          {isRefreshing ? (
-            <span className="spinner small"></span>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M13.65 2.35a8 8 0 10-.704 11.746l-1.06-1.06A6.5 6.5 0 112.35 3.65l1.06-1.06a8 8 0 0111.296.704zM8 3a.75.75 0 01.75.75v3.5h3.5a.75.75 0 010 1.5h-4.25A.75.75 0 017.25 8V3.75A.75.75 0 018 3z"/>
-            </svg>
-          )}
-        </button>
+          <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+        </Button>
       </div>
       
       {isOpen && (
-        <div className="installation-dropdown">
+        <div className="absolute z-10 mt-2 w-full rounded-md border bg-popover p-1 shadow-md">
           {installations.map((installation) => (
             <button
               key={installation.id}
-              className={`installation-option ${
-                currentInstallation?.id === installation.id ? 'selected' : ''
-              }`}
+              className={cn(
+                "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground",
+                currentInstallation?.id === installation.id && "bg-accent"
+              )}
               onClick={() => handleSelect(installation)}
             >
-              <img 
-                src={installation.account.avatar_url} 
-                alt={installation.account.login}
-                className="installation-avatar"
-              />
-              <div className="installation-info">
-                <span className="installation-name">
-                  {installation.account.login}
-                </span>
-                <span className="installation-meta">
-                  {installation.account.type} • {installation.repository_selection === 'all' ? 'All repos' : 'Selected repos'}
-                </span>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage 
+                    src={installation.account.avatar_url} 
+                    alt={installation.account.login}
+                  />
+                  <AvatarFallback>
+                    {installation.account.login[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="text-left">
+                  <div className="font-medium">
+                    {installation.account.login}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {installation.account.type} • {installation.repository_selection === 'all' ? 'All repos' : 'Selected repos'}
+                  </div>
+                </div>
               </div>
               {currentInstallation?.id === installation.id && (
-                <svg 
-                  className="check-icon" 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 16 16"
-                >
-                  <path 
-                    d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"
-                    fill="currentColor"
-                  />
-                </svg>
+                <Check className="h-4 w-4" />
               )}
             </button>
           ))}
