@@ -102,7 +102,6 @@ export const Sidebar: React.FC = () => {
               <Collapsible
                 key={installation.id}
                 open={expandedInstallations.has(installation.id)}
-                onOpenChange={() => toggleInstallation(installation.id)}
               >
                 <CollapsibleTrigger asChild>
                   <Button
@@ -119,7 +118,12 @@ export const Sidebar: React.FC = () => {
                         expandedInstallations.has(installation.id) && "rotate-90"
                       )}
                     />
-                    <Github className="mr-2 h-4 w-4" />
+                    <Avatar className="h-5 w-5 mr-2">
+                      <AvatarImage src={installation.account.avatar_url} alt={installation.account.login} />
+                      <AvatarFallback className="text-xs">
+                        <Github className="h-3 w-3" />
+                      </AvatarFallback>
+                    </Avatar>
                     <span className="truncate">{installation.account.login}</span>
                   </Button>
                 </CollapsibleTrigger>
