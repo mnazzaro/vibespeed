@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Github, User } from 'lucide-react';
+import { ChevronRight, Github, User, LogOut, Plus, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,7 +22,7 @@ interface Installation {
 }
 
 export const Sidebar: React.FC = () => {
-  const { installations, currentInstallation, isAuthenticated, user, loadRepositories, selectInstallation } = useAuthStore();
+  const { installations, currentInstallation, isAuthenticated, user, loadRepositories, selectInstallation, logout } = useAuthStore();
   const [expandedInstallations, setExpandedInstallations] = useState<Set<number>>(new Set());
   const [installationRepos, setInstallationRepos] = useState<Record<number, any[]>>({});
   const [loadingRepos, setLoadingRepos] = useState<Set<number>>(new Set());
@@ -62,6 +62,14 @@ export const Sidebar: React.FC = () => {
     await toggleInstallation(installation.id);
   };
 
+  const handleAddInstallation = async () => {
+    const installationUrl = await window.electronAPI.app.getInstallationUrl();
+    await window.electronAPI.app.openExternal(installationUrl);
+    
+    // Installations will automatically refresh via the auth:state-changed event
+    // when the OAuth callback is received after the user adds the installation
+  };
+
   return (
     <div className="flex h-full w-64 flex-col border-r bg-muted/10">
       {/* Header */}
@@ -74,9 +82,20 @@ export const Sidebar: React.FC = () => {
         {isAuthenticated ? (
           <div className="space-y-2">
             <div className="mb-4">
-              <h2 className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
-                GitHub Installations
-              </h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xs font-semibold uppercase text-muted-foreground">
+                  GitHub Installations
+                </h2>
+                <Button
+                  onClick={handleAddInstallation}
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              </div>
             </div>
             
             {installations?.map((installation) => (
@@ -146,17 +165,28 @@ export const Sidebar: React.FC = () => {
       {/* Profile Section at Bottom */}
       <div className="border-t p-4">
         {isAuthenticated && user ? (
-          <div className="flex items-center space-x-3">
-            <Avatar>
-              <AvatarImage src={user.avatar_url} alt={user.login} />
-              <AvatarFallback>
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">{user.name || user.login}</p>
-              <p className="text-xs text-muted-foreground truncate">@{user.login}</p>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3">
+              <Avatar>
+                <AvatarImage src={user.avatar_url} alt={user.login} />
+                <AvatarFallback>
+                  <User className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-medium truncate">{user.name || user.login}</p>
+                <p className="text-xs text-muted-foreground truncate">@{user.login}</p>
+              </div>
             </div>
+            <Button 
+              onClick={() => logout()}
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
         ) : (
           <div className="flex items-center space-x-3">

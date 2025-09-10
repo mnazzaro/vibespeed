@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useAuthStore } from './store/auth';
-import { LoginButton } from './components/Auth/LoginButton';
 import { InstallationSelector } from './components/Auth/InstallationSelector';
 import { RepositoryPicker } from './components/Auth/RepositoryPicker';
 import { Sidebar } from '../components/Sidebar';
@@ -31,9 +30,6 @@ export const App: React.FC = () => {
             <h2 className="text-lg font-medium">
               {currentInstallation ? currentInstallation.account.login : 'Dashboard'}
             </h2>
-          </div>
-          <div className="flex items-center space-x-4">
-            <LoginButton />
           </div>
         </header>
         

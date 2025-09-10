@@ -239,6 +239,7 @@ export class AuthIPCHandler {
     // Handle auth callbacks from deep links
     deepLinkHandler.on('auth-callback', async (data: DeepLinkData) => {
       if (data.code && data.state) {
+        // Full OAuth flow with state - handle normally
         try {
           const response = await authService.handleOAuthCallback(data.code, data.state);
           
@@ -263,6 +264,29 @@ export class AuthIPCHandler {
               error: error.message || 'Authentication failed',
             });
           }
+        }
+      } else if (data.code && !data.state) {
+        // Installation callback - just has code, no state
+        // This happens when user adds a new GitHub App installation
+        console.log('GitHub App installation callback received, refreshing installations...');
+        
+        try {
+          // If user is authenticated, refresh their installations
+          if (await authService.isAuthenticated()) {
+            const response = await authService.refreshUserData();
+            
+            if (this.mainWindow && response.success) {
+              this.mainWindow.webContents.send('auth:state-changed', {
+                isAuthenticated: true,
+                user: response.data?.user,
+                installations: response.data?.installations,
+              });
+              
+              console.log('Installations refreshed successfully');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh installations after installation callback:', error);
         }
       } else if (data.error) {
         // Handle error from GitHub
