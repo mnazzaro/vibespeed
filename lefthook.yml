@@ -1,0 +1,71 @@
+# Lefthook configuration
+# https://github.com/evilmartians/lefthook
+
+# COLORS
+colors: true
+
+# HOOKS
+pre-commit:
+  parallel: false
+  commands:
+    # ESLint - fix issues but fail if fixes were needed
+    lint:
+      glob: 'src/**/*.{js,jsx,ts,tsx}'
+      run: |
+        if pnpm exec eslint {staged_files} --max-warnings=0; then
+          echo "✅ ESLint: No issues found"
+          exit 0
+        else
+          echo "🔧 ESLint: Fixing issues..."
+          pnpm exec eslint {staged_files} --fix --max-warnings=0
+          git add {staged_files}
+          echo "❌ ESLint: Fixed issues - please review and recommit"
+          exit 1
+        fi
+      stage_fixed: true
+
+    # Prettier - fix formatting but fail if fixes were needed
+    format:
+      glob: '*.{js,jsx,ts,tsx,json,css,md}'
+      run: |
+        if pnpm exec prettier --check {staged_files}; then
+          echo "✅ Prettier: Code is properly formatted"
+          exit 0
+        else
+          echo "🔧 Prettier: Fixing formatting..."
+          pnpm exec prettier --write {staged_files}
+          git add {staged_files}
+          echo "❌ Prettier: Fixed formatting - please review and recommit"
+          exit 1
+        fi
+      stage_fixed: true
+
+    # Stylelint - fix issues but fail if fixes were needed
+    stylelint:
+      glob: '*.{css,scss}'
+      run: |
+        if pnpm exec stylelint {staged_files} --allow-empty-input; then
+          echo "✅ Stylelint: No issues found"
+          exit 0
+        else
+          echo "🔧 Stylelint: Fixing issues..."
+          pnpm exec stylelint {staged_files} --allow-empty-input --fix
+          git add {staged_files}
+          echo "❌ Stylelint: Fixed issues - please review and recommit"
+          exit 1
+        fi
+      stage_fixed: true
+
+    # TypeScript type checking (can't auto-fix, just check)
+    typecheck:
+      run: pnpm run type-check
+
+# Skip hooks in CI/CD environments
+skip:
+  - merge
+  - rebase
+
+# Output mode
+output:
+  - summary
+  - success

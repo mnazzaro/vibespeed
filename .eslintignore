@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+
+# Next.js
+.next
+out
+build
+
+# Production
+dist
+
+# Testing
+coverage
+
+# Misc
+*.log
+.DS_Store
+
+# Config files
+*.config.js
+*.config.ts
+commitlint.config.js
+postcss.config.mjs
+
+# Generated files
+*.generated.ts
+*.generated.js
