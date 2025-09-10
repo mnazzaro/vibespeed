@@ -1,4 +1,11 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
 
-// https://vitejs.dev/config
-export default defineConfig({});
+export default defineConfig(async () => {
+  const tailwindcss = await import('@tailwindcss/vite').then(m => m.default)
+  
+  return {
+    plugins: [
+      tailwindcss(),
+    ],
+  }
+})
