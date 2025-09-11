@@ -44,14 +44,38 @@ This Electron app implements GitHub App installation flow for secure repository 
 
 2. Fill in your GitHub App credentials in `.env`:
    ```env
+   # Required GitHub App Settings
    GITHUB_APP_NAME=your-app-name  # The URL slug of your app
    GITHUB_APP_ID=your_app_id
    GITHUB_CLIENT_ID=your_client_id
    GITHUB_CLIENT_SECRET=your_client_secret
+   
+   # Private Key - Choose one option:
+   # Option 1: Path to .pem file
    GITHUB_PRIVATE_KEY_PATH=./private-key.pem
+   # Option 2: Base64 encoded private key (use: base64 -i private-key.pem | tr -d '\n')
+   # GITHUB_PRIVATE_KEY=LS0tLS1CRUdJTi...
+   
+   # Optional Settings
+   GITHUB_WEBHOOK_SECRET=your_webhook_secret_here
+   GITHUB_REDIRECT_URI=vibespeed://auth-callback  # Override default if needed
+   
+   # Application Environment
+   APP_ENV=development  # or 'production'
+   APP_DEBUG=true       # Enable debug logging
+   APP_LOG_LEVEL=info   # Logging level
+   
+   # Security (required in production)
+   SESSION_SECRET=generate_a_random_string_here
    ```
 
-3. Place your private key file in the project root
+3. Configure your private key using one of these methods:
+   - **Option 1 (File)**: Place your private key file in the project root and set `GITHUB_PRIVATE_KEY_PATH`
+   - **Option 2 (Base64)**: Convert your private key to base64 and set `GITHUB_PRIVATE_KEY`:
+     ```bash
+     base64 -i private-key.pem | tr -d '\n'
+     ```
+   Note: If both are set, the file path takes precedence.
 
 ### 3. Install Dependencies
 
@@ -112,6 +136,34 @@ After authentication, the app can:
 - Tokens expire after 1 hour
 - App automatically refreshes tokens
 - Manual refresh available in UI
+
+### Configuration errors
+- **Missing required environment variables**: Check that all required variables are set in `.env`
+- **Private key loading fails**: Verify file path exists or base64 encoding is correct
+- **Session secret in production**: `SESSION_SECRET` must be set for production deployments
+- **Invalid GitHub App credentials**: Verify App ID, Client ID, and Client Secret are correct
+
+## Environment Configuration
+
+### Development vs Production
+
+**Development Environment:**
+- Uses `APP_ENV=development`
+- `SESSION_SECRET` defaults to a development value if not set
+- `APP_DEBUG=true` enables detailed logging
+- DevTools open automatically
+
+**Production Environment:**
+- Set `APP_ENV=production`
+- `SESSION_SECRET` is required and must be a secure random string
+- `APP_DEBUG=false` for performance and security
+- Generate session secret with: `openssl rand -base64 32`
+
+### Debug Mode
+- Enable with `APP_DEBUG=true`
+- Provides detailed authentication flow logs
+- Shows configuration loading details
+- Useful for troubleshooting setup issues
 
 ## Development
 
