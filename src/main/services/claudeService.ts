@@ -19,7 +19,6 @@ import {
   ClaudeEvent,
   ToolUsageInfo,
 } from '../../shared/types/claude';
-import { ChatMessage } from '../../shared/types/tasks';
 
 import { TaskManager } from './taskManager';
 
@@ -89,36 +88,22 @@ export class ClaudeService {
       throw new Error('Task not found');
     }
 
-    // Add user message to task
-    const userChatMessage = this.taskManager.addMessage(taskId, {
-      role: 'user',
-      content: userMessage,
-      metadata: {},
-    });
-
-    if (!userChatMessage) {
-      throw new Error('Failed to add user message');
-    }
-
-    // Create assistant message placeholder
-    const assistantMessageId = uuidv4();
-    const assistantChatMessage: ChatMessage = {
-      id: assistantMessageId,
+    // Note: User message is already added by the frontend
+    // We only need to create and add assistant message placeholder
+    const assistantMessage = this.taskManager.addMessage(taskId, {
       role: 'assistant',
       content: '',
-      timestamp: new Date(),
       metadata: {
         isStreaming: true,
         events: [],
       },
-    };
-
-    // Add assistant message to task
-    this.taskManager.addMessage(taskId, {
-      role: 'assistant',
-      content: '',
-      metadata: assistantChatMessage.metadata,
     });
+
+    if (!assistantMessage) {
+      throw new Error('Failed to add assistant message');
+    }
+
+    const assistantMessageId = assistantMessage.id;
 
     // Set up abort controller for cancellation
     const abortController = new AbortController();
@@ -264,8 +249,8 @@ export class ClaudeService {
       const task = this.taskManager.getTask(taskId);
       if (task) {
         const messages = task.messages.map((msg) => {
-          const msgTime = msg.timestamp instanceof Date ? msg.timestamp.getTime() : new Date(msg.timestamp).getTime();
-          if (msg.id === messageId || (msg.role === 'assistant' && Math.abs(msgTime - new Date().getTime()) < 60000)) {
+          // Only update the specific message with matching ID
+          if (msg.id === messageId) {
             return {
               ...msg,
               content: fullContent,
@@ -288,6 +273,12 @@ export class ClaudeService {
         content: fullContent,
         messageId,
       });
+
+      // Force a refresh of the task to ensure UI updates
+      const updatedTask = this.taskManager.getTask(taskId);
+      if (updatedTask && this.mainWindow && !this.mainWindow.isDestroyed()) {
+        this.mainWindow.webContents.send('task:updated', taskId, updatedTask);
+      }
     } catch (error) {
       console.error('Claude query error:', error);
       this.sendEvent(taskId, messageId, {

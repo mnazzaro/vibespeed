@@ -159,9 +159,14 @@ const tasksAPI = {
     ipcRenderer.on('task:message-received', (event, taskId, message) => callback(taskId, message));
   },
 
+  onTaskUpdated: (callback: (taskId: string, task: Task) => void) => {
+    ipcRenderer.on('task:updated', (event, taskId, task) => callback(taskId, task));
+  },
+
   removeTaskListeners: () => {
     ipcRenderer.removeAllListeners('task:worktree-progress');
     ipcRenderer.removeAllListeners('task:message-received');
+    ipcRenderer.removeAllListeners('task:updated');
   },
 };
 

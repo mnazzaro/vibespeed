@@ -218,11 +218,7 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={
-            selectedReposForNewTask.length === 0
-              ? 'Type repo name and press Enter...'
-              : 'Add another repo or press Cmd+Enter to create task'
-          }
+          placeholder="Search repositories..."
           className="w-full border-0 bg-transparent py-2 pr-3 pl-7 text-sm outline-none focus:ring-0"
         />
       </div>

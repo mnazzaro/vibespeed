@@ -83,15 +83,30 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Subscribe to activeTask from store for real-time updates
-  const { activeTask } = useTaskStore();
+  const { activeTask, sendMessage, updateTask } = useTaskStore();
 
   // Use activeTask from store if available, otherwise fall back to prop
   const task = activeTask || propTask;
 
   // Auto-scroll to bottom when new messages arrive or streaming content updates
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [task.messages, streamingMessages]);
+
+  // Listen for task updates from main process
+  useEffect(() => {
+    const handleTaskUpdated = (taskId: string, updatedTask: Task) => {
+      if (taskId === task.id) {
+        updateTask(taskId, updatedTask);
+      }
+    };
+
+    window.electronAPI.tasks.onTaskUpdated(handleTaskUpdated);
+
+    return () => {
+      window.electronAPI.tasks.removeTaskListeners();
+    };
+  }, [task.id, updateTask]);
 
   // Listen for Claude streaming events
   useEffect(() => {
@@ -182,7 +197,10 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     setIsLoading(true);
 
     try {
-      // Send message to Claude instead of the old echo handler
+      // First, add the user message to the store (this will update the UI immediately)
+      await sendMessage(task.id, messageText);
+
+      // Then send to Claude for processing
       const response = await window.electronAPI.claude.sendMessage(task.id, messageText);
 
       if (response.success && response.data) {
@@ -273,7 +291,7 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-1 flex-col overflow-hidden">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-6">
         {task.messages.length === 0 && streamingMessages.size === 0 ? (

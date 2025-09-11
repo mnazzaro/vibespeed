@@ -47,15 +47,6 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-background flex h-14 items-center justify-between border-b px-6">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-lg font-medium">
-              {currentInstallation ? currentInstallation.account.login : 'Dashboard'}
-            </h2>
-          </div>
-        </header>
-
         {/* Main Content */}
         <main className="bg-background flex-1 overflow-hidden">
           {activeTask ? (
