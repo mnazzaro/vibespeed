@@ -189,8 +189,10 @@ export class ClaudeService {
       let sessionId = task.sessionId;
       let isInThinkingBlock = false;
       let intermediateText = ''; // Text between tool calls
-      // let hasSeenToolUse = false; // Track if we've seen any tool use
       // let isCollectingFinalText = false; // Track if we're collecting final response text
+      let currentToolInputJson = ''; // Accumulate tool input JSON string during streaming
+      let currentToolId: string | null = null; // Track current tool being streamed
+      let currentToolName: string | null = null; // Track current tool name
 
       // Build conversation history for context
       const conversationHistory = this.buildConversationHistory(task.messages);
@@ -317,16 +319,19 @@ export class ClaudeService {
                   intermediateText = ''; // Reset for next segment
                 }
 
-                // hasSeenToolUse = true;
+                currentToolId = contentBlock.id;
+                currentToolName = contentBlock.name;
+                currentToolInputJson = ''; // Reset for new tool
                 this.log('[Claude Tool Use] Started:', contentBlock.name, 'with ID:', contentBlock.id);
                 const toolEvent = this.createToolEvent(contentBlock);
                 events.push(toolEvent);
 
+                // Send initial tool_start event (params will be updated later)
                 this.sendEvent(taskId, messageId, {
                   type: 'tool_start',
                   toolName: contentBlock.name,
-                  toolParams: contentBlock.input || {},
-                  toolUseId: contentBlock.id, // Include the tool ID
+                  toolParams: {},
+                  toolUseId: contentBlock.id,
                   messageId,
                 });
               } else if (contentBlock?.type === 'text') {
@@ -368,8 +373,27 @@ export class ClaudeService {
                   });
                 }
               } else if (delta?.type === 'input_json_delta') {
-                // Tool input is being streamed
-                this.log('[Claude Tool Input] Streaming input:', delta.partial_json);
+                // Tool input is being streamed - concatenate the fragments
+                if (currentToolId && delta.partial_json) {
+                  currentToolInputJson += delta.partial_json;
+                  this.log('[Claude Tool Input] Accumulating:', delta.partial_json);
+
+                  // Try to parse and send updates as we get more complete JSON
+                  try {
+                    const toolParams = JSON.parse(currentToolInputJson);
+                    // Successfully parsed - send an update
+                    this.log('[Claude Tool Use] Sending tool_start update with params:', JSON.stringify(toolParams));
+                    this.sendEvent(taskId, messageId, {
+                      type: 'tool_start',
+                      toolName: currentToolName || '',
+                      toolParams: toolParams,
+                      toolUseId: currentToolId,
+                      messageId,
+                    });
+                  } catch {
+                    // JSON not complete yet, keep accumulating
+                  }
+                }
               }
             }
 
@@ -382,6 +406,35 @@ export class ClaudeService {
                   this.log('[Claude Thinking] Completed thinking block:', currentThinkingBlock);
                 }
                 currentThinkingBlock = '';
+              } else if (currentToolId) {
+                // Tool input streaming is complete - parse and send the tool_start event
+                let toolParams = {};
+                try {
+                  if (currentToolInputJson) {
+                    toolParams = JSON.parse(currentToolInputJson);
+                  }
+                } catch (e) {
+                  this.log('[Claude Tool Use] Failed to parse tool input:', currentToolInputJson, e);
+                }
+
+                // Update the tool event with the complete input
+                const toolEvent = events.find((e) => e.tool?.id === currentToolId);
+                if (toolEvent && toolEvent.tool) {
+                  toolEvent.tool.parameters = toolParams;
+                }
+
+                this.log('[Claude Tool Use] Sending tool_start with params:', JSON.stringify(toolParams));
+                this.sendEvent(taskId, messageId, {
+                  type: 'tool_start',
+                  toolName: currentToolName || '',
+                  toolParams: toolParams,
+                  toolUseId: currentToolId,
+                  messageId,
+                });
+
+                currentToolId = null;
+                currentToolName = null;
+                currentToolInputJson = '';
               }
             }
 
@@ -461,6 +514,16 @@ export class ClaudeService {
                     events.push(toolEvent);
                     this.log('[Claude Tool Use] Created new tool event:', c.name);
                   }
+
+                  // Send tool_start event with complete parameters
+                  this.log('[Claude Tool Use] Sending tool_start with complete params:', JSON.stringify(c.input));
+                  this.sendEvent(taskId, messageId, {
+                    type: 'tool_start',
+                    toolName: c.name,
+                    toolParams: c.input || {},
+                    toolUseId: c.id,
+                    messageId,
+                  });
                 }
               });
             } else if (typeof content === 'string') {

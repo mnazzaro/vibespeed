@@ -162,6 +162,8 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
             break;
 
           case 'tool_start': {
+            console.log('[TaskChat] Tool start event:', event.toolName, 'params:', event.toolParams);
+
             // Check if we already have this tool event (deduplication during streaming)
             const existingToolEvent = event.toolUseId
               ? currentMessage.events.find((e) => e.id === event.toolUseId || e.tool?.id === event.toolUseId)
@@ -430,10 +432,10 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     const toolResult = event.result || event.tool?.result;
 
     const isExpanded = expandedEvents.has(event.id);
-    const hasExpandableData = (toolParams && Object.keys(toolParams).length > 0) || toolResult;
 
-    // Only render if there's expandable data (per requirement)
-    if (!hasExpandableData) {
+    // Always show tool calls during streaming, even without results yet
+    // This ensures users see tools being invoked in real-time
+    if (!toolName) {
       return null;
     }
 
@@ -444,36 +446,44 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
             <div className="flex-shrink-0">{toolName && getIconForTool(toolName)}</div>
             <div className="min-w-0 flex-1">
               <div
-                className={cn(
-                  'flex items-center text-xs text-gray-600',
-                  hasExpandableData && 'cursor-pointer hover:text-gray-800'
-                )}
-                onClick={() => hasExpandableData && toggleEventExpansion(event.id)}
+                className="flex cursor-pointer items-center text-xs text-gray-600 hover:text-gray-800"
+                onClick={() => toggleEventExpansion(event.id)}
               >
                 <span className="font-medium">{toolName || 'Tool'}</span>
-                {hasExpandableData && <span className="ml-2 text-gray-400">{isExpanded ? '▼' : '▶'}</span>}
+                <span className="ml-2 text-gray-400">{isExpanded ? '▼' : '▶'}</span>
+                {toolStatus === 'started' && <span className="ml-2 text-blue-600">Running...</span>}
+                {toolStatus === 'completed' && toolResult && <span className="ml-2 text-green-600">✓</span>}
                 {toolStatus === 'failed' && <AlertCircle className="ml-2 inline h-3 w-3 text-red-600" />}
               </div>
             </div>
           </div>
-          {isExpanded && hasExpandableData && (
+          {isExpanded && (
             <div className="mt-2 rounded bg-gray-50 p-3 text-xs">
-              {toolParams && Object.keys(toolParams).length > 0 && (
-                <div>
-                  <div className="mb-1 font-medium text-gray-600">Parameters:</div>
+              {/* Always show parameters section, even if empty */}
+              <div>
+                <div className="mb-1 font-medium text-gray-600">Input:</div>
+                {toolParams && Object.keys(toolParams).length > 0 ? (
                   <pre className="overflow-x-auto whitespace-pre-wrap text-gray-700">
                     {JSON.stringify(toolParams, null, 2)}
                   </pre>
+                ) : (
+                  <div className="text-gray-500 italic">No parameters</div>
+                )}
+              </div>
+
+              {/* Show waiting message or result */}
+              {toolStatus === 'started' && !toolResult ? (
+                <div className="mt-3 border-t border-gray-200 pt-3">
+                  <div className="text-gray-500 italic">Waiting for result...</div>
                 </div>
-              )}
-              {toolResult && (
-                <div className={toolParams ? 'mt-3 border-t border-gray-200 pt-3' : ''}>
+              ) : toolResult ? (
+                <div className="mt-3 border-t border-gray-200 pt-3">
                   <div className="mb-1 font-medium text-gray-600">Result:</div>
                   <pre className="overflow-x-auto whitespace-pre-wrap text-gray-700">
                     {typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult, null, 2)}
                   </pre>
                 </div>
-              )}
+              ) : null}
             </div>
           )}
         </div>
