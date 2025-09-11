@@ -252,24 +252,23 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
       )}
 
       {/* Help text */}
-      <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
-        <span className="inline-flex items-center gap-2">
-          <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">Enter</kbd>
-          Add repo
-          {selectedReposForNewTask.length > 0 && (
-            <>
-              <span className="text-muted-foreground/50">•</span>
-              <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">⌘ Enter</kbd>
-              Create task
-            </>
-          )}
-          <span className="text-muted-foreground/50">•</span>
-          <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">Esc</kbd>
-          Cancel
-        </span>
+      <div className="text-muted-foreground mt-2 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-2">
+            <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">Enter</kbd>
+            Add repo
+            <span className="text-muted-foreground/50">•</span>
+            <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">Esc</kbd>
+            Cancel
+          </span>
+        </div>
         {selectedReposForNewTask.length > 0 && (
-          <button onClick={handleFinalize} className="text-primary hover:text-primary/80 text-xs underline">
-            Create Task
+          <button
+            onClick={handleFinalize}
+            className="bg-primary/5 hover:bg-primary/10 mt-1 flex w-full items-center justify-center gap-2 rounded px-2 py-1 transition-colors"
+          >
+            <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">⌘ Enter</kbd>
+            Create task
           </button>
         )}
       </div>

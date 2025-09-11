@@ -8,6 +8,7 @@ export interface ClaudeEvent {
 }
 
 export interface ToolUsageInfo {
+  id?: string; // Tool use ID for matching with results
   name: string;
   description?: string;
   parameters?: Record<string, any>;
@@ -36,12 +37,18 @@ export interface ClaudeQueryOptions {
 }
 
 export interface ClaudeStreamEvent {
-  type: 'partial' | 'complete' | 'tool_start' | 'tool_end' | 'error';
+  type: 'partial' | 'complete' | 'tool_start' | 'tool_end' | 'tool_result' | 'thinking' | 'error';
   content?: string;
   toolName?: string;
   toolParams?: any;
+  toolResult?: any;
+  toolUseId?: string;
+  thinkingContent?: string;
   error?: string;
   messageId: string;
+  // For complete event, include all accumulated data
+  events?: ClaudeEvent[];
+  thinkingBlocks?: string[];
 }
 
 export interface ClaudeIPCResponse<T = any> {
