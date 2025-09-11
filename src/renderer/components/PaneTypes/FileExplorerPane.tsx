@@ -1,7 +1,6 @@
-import { ChevronRight, File, Folder, FolderOpen, Trash2, Edit2, Copy } from 'lucide-react';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { ChevronRight, File, Folder, FolderOpen } from 'lucide-react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePaneStore } from '@/renderer/store/panes';
 import { useTaskStore } from '@/renderer/store/tasks';
@@ -14,12 +13,6 @@ interface FileExplorerPaneProps {
 }
 
 const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
-  const [isCreatingFile, setIsCreatingFile] = useState(false);
-  const [newFileName, setNewFileName] = useState('');
-  const [renamingFile, setRenamingFile] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file: FileNode } | null>(null);
-
   const { fileExplorerStates, initFileExplorer, updateFileExplorerState, toggleDirectory, selectFile } = usePaneStore();
 
   const { activeTask } = useTaskStore();
@@ -188,82 +181,6 @@ const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
     }
   };
 
-  // Handle context menu
-  const handleContextMenu = (e: React.MouseEvent, node: FileNode) => {
-    e.preventDefault();
-    setContextMenu({ x: e.clientX, y: e.clientY, file: node });
-  };
-
-  // Create new file/folder
-  const handleCreate = async (type: 'file' | 'directory') => {
-    if (!state?.currentPath || !newFileName) return;
-
-    const newPath = `${state.currentPath}/${newFileName}`;
-
-    try {
-      if (type === 'directory') {
-        await window.electronAPI.files.createDirectory(newPath);
-      } else {
-        await window.electronAPI.files.writeFile(newPath, '');
-      }
-
-      // Reload directory
-      await loadDirectory(state.currentPath);
-      setIsCreatingFile(false);
-      setNewFileName('');
-    } catch (error) {
-      console.error(`Failed to create ${type}:`, error);
-    }
-  };
-
-  // Delete file/folder
-  const handleDelete = async (node: FileNode) => {
-    if (!confirm(`Are you sure you want to delete "${node.name}"?`)) return;
-
-    try {
-      await window.electronAPI.files.delete(node.path);
-
-      // Reload parent directory
-      const parentPath = node.path.substring(0, node.path.lastIndexOf('/'));
-      await loadDirectory(parentPath || state?.rootPath || taskRootPath || '/');
-    } catch (error) {
-      console.error('Failed to delete:', error);
-    }
-  };
-
-  // Rename file/folder
-  const handleRename = async (node: FileNode) => {
-    if (!renameValue || renameValue === node.name) {
-      setRenamingFile(null);
-      return;
-    }
-
-    const parentPath = node.path.substring(0, node.path.lastIndexOf('/'));
-    const newPath = `${parentPath}/${renameValue}`;
-
-    try {
-      await window.electronAPI.files.rename(node.path, newPath);
-
-      // Reload directory
-      await loadDirectory(parentPath || state?.rootPath || taskRootPath || '/');
-      setRenamingFile(null);
-      setRenameValue('');
-    } catch (error) {
-      console.error('Failed to rename:', error);
-    }
-  };
-
-  // Copy file path (relative to task root)
-  const copyPath = (path: string) => {
-    if (taskRootPath && path.startsWith(taskRootPath)) {
-      // Copy relative path
-      const relativePath = path.substring(taskRootPath.length + 1);
-      navigator.clipboard.writeText(relativePath || '.');
-    } else {
-      navigator.clipboard.writeText(path);
-    }
-  };
-
   // Get file icon based on extension
   const getFileIcon = (node: FileNode) => {
     if (node.type === 'directory') {
@@ -338,7 +255,6 @@ const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
   // Render file tree node
   const renderNode = (node: FileNode, depth: number = 0) => {
     const isSelected = state?.selectedFiles.includes(node.path);
-    const isRenaming = renamingFile === node.path;
 
     return (
       <div key={node.path}>
@@ -350,7 +266,6 @@ const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
           )}
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
           onClick={(e) => handleNodeClick(node, e)}
-          onContextMenu={(e) => handleContextMenu(e, node)}
         >
           {node.type === 'directory' && (
             <ChevronRight className={cn('h-3 w-3 transition-transform', node.isExpanded && 'rotate-90')} />
@@ -358,23 +273,7 @@ const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
 
           <span className="flex-shrink-0">{getFileIcon(node)}</span>
 
-          {isRenaming ? (
-            <input
-              type="text"
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onBlur={() => handleRename(node)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleRename(node);
-                if (e.key === 'Escape') setRenamingFile(null);
-              }}
-              className="flex-1 bg-transparent text-sm outline-none"
-              autoFocus
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="flex-1 truncate text-sm">{node.name}</span>
-          )}
+          <span className="flex-1 truncate text-sm">{node.name}</span>
 
           {node.type === 'file' && node.size && (
             <span className="text-muted-foreground text-xs opacity-0 group-hover:opacity-100">
@@ -424,13 +323,6 @@ const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
     };
   }, [state?.currentPath, taskRootPath]);
 
-  // Close context menu when clicking outside
-  useEffect(() => {
-    const handleClick = () => setContextMenu(null);
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, []);
-
   // Show message when no task is active
   if (!taskRootPath) {
     return (
@@ -458,35 +350,6 @@ const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
 
   return (
     <div className="bg-background flex h-full flex-col">
-      {/* Create new file/folder */}
-      {isCreatingFile && (
-        <div className="flex items-center gap-2 border-b p-2">
-          <input
-            type="text"
-            value={newFileName}
-            onChange={(e) => setNewFileName(e.target.value)}
-            placeholder="Enter name..."
-            className="flex-1 rounded border px-2 py-1 text-xs outline-none"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newFileName) {
-                handleCreate(e.shiftKey ? 'directory' : 'file');
-              }
-              if (e.key === 'Escape') {
-                setIsCreatingFile(false);
-                setNewFileName('');
-              }
-            }}
-          />
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => handleCreate('file')}>
-            File
-          </Button>
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => handleCreate('directory')}>
-            Folder
-          </Button>
-        </div>
-      )}
-
       {/* Repository name header */}
       {state && (
         <div className="bg-muted/30 flex h-6 items-center gap-1 border-b px-2 text-xs font-medium">
@@ -518,52 +381,6 @@ const FileExplorerPane: React.FC<FileExplorerPaneProps> = ({ paneId }) => {
           </div>
         )}
       </div>
-
-      {/* Context Menu */}
-      {contextMenu && (
-        <div
-          className="bg-popover absolute z-50 rounded-md border p-1 shadow-md"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-xs"
-            onClick={() => {
-              setRenamingFile(contextMenu.file.path);
-              setRenameValue(contextMenu.file.name);
-              setContextMenu(null);
-            }}
-          >
-            <Edit2 className="mr-2 h-3 w-3" />
-            Rename
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-xs"
-            onClick={() => {
-              copyPath(contextMenu.file.path);
-              setContextMenu(null);
-            }}
-          >
-            <Copy className="mr-2 h-3 w-3" />
-            Copy Path
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:bg-destructive/10 w-full justify-start text-xs"
-            onClick={() => {
-              handleDelete(contextMenu.file);
-              setContextMenu(null);
-            }}
-          >
-            <Trash2 className="mr-2 h-3 w-3" />
-            Delete
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
