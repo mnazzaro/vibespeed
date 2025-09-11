@@ -1,20 +1,11 @@
 import { Octokit } from '@octokit/rest';
+
+import { GitHubRepository } from '../../shared/types/auth';
+
 import { authService } from './auth';
 import { tokenManager } from './tokenManager';
-import { 
-  GitHubRepository, 
-  GitHubInstallation,
-  UserProfile 
-} from '../../shared/types/auth';
 
-export interface CreateRepositoryOptions {
-  name: string;
-  description?: string;
-  private?: boolean;
-  auto_init?: boolean;
-  gitignore_template?: string;
-  license_template?: string;
-}
+export type CreateRepositoryOptions = Parameters<Octokit['repos']['createForAuthenticatedUser']>[0];
 
 export interface CreateIssueOptions {
   title: string;
@@ -35,16 +26,16 @@ export interface CreatePullRequestOptions {
 
 export class GitHubService {
   private static instance: GitHubService;
-  
+
   private constructor() {}
-  
+
   public static getInstance(): GitHubService {
     if (!GitHubService.instance) {
       GitHubService.instance = new GitHubService();
     }
     return GitHubService.instance;
   }
-  
+
   private async getOctokit(installationId?: number): Promise<Octokit> {
     if (installationId) {
       // Use installation token
@@ -62,22 +53,22 @@ export class GitHubService {
       return new Octokit({ auth: userToken });
     }
   }
-  
+
   // Repository operations
   public async getRepository(owner: string, repo: string, installationId?: number): Promise<any> {
     const octokit = await this.getOctokit(installationId);
     const { data } = await octokit.repos.get({ owner, repo });
     return data;
   }
-  
+
   public async listUserRepositories(): Promise<GitHubRepository[]> {
     const octokit = await this.getOctokit();
     const { data } = await octokit.repos.listForAuthenticatedUser({
       per_page: 100,
       sort: 'updated',
     });
-    
-    return data.map(repo => ({
+
+    return data.map((repo) => ({
       id: repo.id,
       name: repo.name,
       full_name: repo.full_name,
@@ -102,11 +93,11 @@ export class GitHubService {
       permissions: repo.permissions,
     }));
   }
-  
+
   public async createRepository(options: CreateRepositoryOptions): Promise<GitHubRepository> {
     const octokit = await this.getOctokit();
     const { data } = await octokit.repos.createForAuthenticatedUser(options);
-    
+
     return {
       id: data.id,
       name: data.name,
@@ -131,7 +122,7 @@ export class GitHubService {
       default_branch: data.default_branch,
     };
   }
-  
+
   // Branch operations
   public async listBranches(owner: string, repo: string, installationId?: number): Promise<any[]> {
     const octokit = await this.getOctokit(installationId);
@@ -142,7 +133,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async getBranch(owner: string, repo: string, branch: string, installationId?: number): Promise<any> {
     const octokit = await this.getOctokit(installationId);
     const { data } = await octokit.repos.getBranch({
@@ -152,7 +143,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   // Commit operations
   public async listCommits(owner: string, repo: string, options?: any, installationId?: number): Promise<any[]> {
     const octokit = await this.getOctokit(installationId);
@@ -163,7 +154,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async getCommit(owner: string, repo: string, ref: string, installationId?: number): Promise<any> {
     const octokit = await this.getOctokit(installationId);
     const { data } = await octokit.repos.getCommit({
@@ -173,12 +164,12 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   // File operations
   public async getFileContent(
-    owner: string, 
-    repo: string, 
-    path: string, 
+    owner: string,
+    repo: string,
+    path: string,
     ref?: string,
     installationId?: number
   ): Promise<any> {
@@ -191,7 +182,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async createOrUpdateFile(
     owner: string,
     repo: string,
@@ -214,7 +205,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   // Issue operations
   public async listIssues(owner: string, repo: string, options?: any, installationId?: number): Promise<any[]> {
     const octokit = await this.getOctokit(installationId);
@@ -225,7 +216,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async createIssue(
     owner: string,
     repo: string,
@@ -240,7 +231,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   // Pull request operations
   public async listPullRequests(owner: string, repo: string, options?: any, installationId?: number): Promise<any[]> {
     const octokit = await this.getOctokit(installationId);
@@ -251,7 +242,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async createPullRequest(
     owner: string,
     repo: string,
@@ -266,20 +257,20 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   // Organization operations
   public async listUserOrganizations(): Promise<any[]> {
     const octokit = await this.getOctokit();
     const { data } = await octokit.orgs.listForAuthenticatedUser();
     return data;
   }
-  
+
   public async getOrganization(org: string): Promise<any> {
     const octokit = await this.getOctokit();
     const { data } = await octokit.orgs.get({ org });
     return data;
   }
-  
+
   // Search operations
   public async searchRepositories(query: string, options?: any): Promise<any> {
     const octokit = await this.getOctokit();
@@ -289,7 +280,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async searchCode(query: string, options?: any): Promise<any> {
     const octokit = await this.getOctokit();
     const { data } = await octokit.search.code({
@@ -298,7 +289,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async searchIssues(query: string, options?: any): Promise<any> {
     const octokit = await this.getOctokit();
     const { data } = await octokit.search.issuesAndPullRequests({
@@ -307,7 +298,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   // User operations
   public async getUser(username?: string): Promise<any> {
     const octokit = await this.getOctokit();
@@ -319,7 +310,7 @@ export class GitHubService {
       return data;
     }
   }
-  
+
   public async listUserFollowers(username?: string): Promise<any[]> {
     const octokit = await this.getOctokit();
     if (username) {
@@ -330,18 +321,7 @@ export class GitHubService {
       return data;
     }
   }
-  
-  public async listUserFollowing(username?: string): Promise<any[]> {
-    const octokit = await this.getOctokit();
-    if (username) {
-      const { data } = await octokit.users.listFollowingForUser({ username });
-      return data;
-    } else {
-      const { data } = await octokit.users.listFollowingForAuthenticatedUser();
-      return data;
-    }
-  }
-  
+
   // Webhook operations (for GitHub Apps)
   public async createWebhook(
     owner: string,
@@ -359,7 +339,7 @@ export class GitHubService {
     });
     return data;
   }
-  
+
   public async listWebhooks(owner: string, repo: string, installationId?: number): Promise<any[]> {
     const octokit = await this.getOctokit(installationId);
     const { data } = await octokit.repos.listWebhooks({

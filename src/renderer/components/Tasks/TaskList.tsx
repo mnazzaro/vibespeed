@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
 import { Plus, Hash, Archive, Check } from 'lucide-react';
+import React, { useEffect } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTaskStore } from '@/renderer/store/tasks';
@@ -10,18 +11,12 @@ interface TaskListProps {
 }
 
 export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
-  const { 
-    tasks, 
-    activeTaskId, 
-    selectTask, 
-    loadTasks,
-    isLoading 
-  } = useTaskStore();
-  
+  const { tasks, activeTaskId, selectTask, loadTasks, isLoading } = useTaskStore();
+
   useEffect(() => {
     loadTasks();
   }, []);
-  
+
   const getTaskIcon = (status: Task['status']) => {
     switch (status) {
       case 'completed':
@@ -32,7 +27,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
         return <Hash className="h-3 w-3" />;
     }
   };
-  
+
   const getTaskStatusColor = (status: Task['status']) => {
     switch (status) {
       case 'completed':
@@ -43,32 +38,24 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
         return 'text-primary';
     }
   };
-  
+
   // Group tasks by status
-  const activeTasks = tasks.filter(t => t.status === 'active');
-  const completedTasks = tasks.filter(t => t.status === 'completed');
-  const archivedTasks = tasks.filter(t => t.status === 'archived');
-  
+  const activeTasks = tasks.filter((t) => t.status === 'active');
+  const completedTasks = tasks.filter((t) => t.status === 'completed');
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xs font-semibold uppercase text-muted-foreground">
-          Tasks
-        </h2>
-        <Button
-          onClick={onCreateClick}
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2"
-        >
-          <Plus className="h-3 w-3 mr-1" />
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="text-muted-foreground text-xs font-semibold uppercase">Tasks</h2>
+        <Button onClick={onCreateClick} variant="ghost" size="sm" className="h-6 px-2">
+          <Plus className="mr-1 h-3 w-3" />
           New
         </Button>
       </div>
-      
+
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
         </div>
       ) : (
         <>
@@ -80,61 +67,43 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
                   key={task.id}
                   variant="ghost"
                   size="sm"
-                  className={cn(
-                    "w-full justify-start text-left",
-                    activeTaskId === task.id && "bg-accent"
-                  )}
+                  className={cn('w-full justify-start text-left', activeTaskId === task.id && 'bg-accent')}
                   onClick={() => selectTask(task.id)}
                 >
-                  <span className={cn("mr-2", getTaskStatusColor(task.status))}>
-                    {getTaskIcon(task.status)}
-                  </span>
-                  <span className="truncate flex-1">{task.name}</span>
-                  <span className="text-xs text-muted-foreground ml-1">
-                    {task.repositories.length}
-                  </span>
+                  <span className={cn('mr-2', getTaskStatusColor(task.status))}>{getTaskIcon(task.status)}</span>
+                  <span className="flex-1 truncate">{task.name}</span>
+                  <span className="text-muted-foreground ml-1 text-xs">{task.repositories.length}</span>
                 </Button>
               ))}
             </div>
           )}
-          
+
           {/* Completed Tasks */}
           {completedTasks.length > 0 && (
             <>
-              <div className="text-xs font-semibold uppercase text-muted-foreground mt-4 mb-1">
-                Completed
-              </div>
+              <div className="text-muted-foreground mt-4 mb-1 text-xs font-semibold uppercase">Completed</div>
               <div className="space-y-1">
                 {completedTasks.map((task) => (
                   <Button
                     key={task.id}
                     variant="ghost"
                     size="sm"
-                    className={cn(
-                      "w-full justify-start text-left opacity-60",
-                      activeTaskId === task.id && "bg-accent"
-                    )}
+                    className={cn('w-full justify-start text-left opacity-60', activeTaskId === task.id && 'bg-accent')}
                     onClick={() => selectTask(task.id)}
                   >
-                    <span className={cn("mr-2", getTaskStatusColor(task.status))}>
-                      {getTaskIcon(task.status)}
-                    </span>
-                    <span className="truncate flex-1 line-through">{task.name}</span>
+                    <span className={cn('mr-2', getTaskStatusColor(task.status))}>{getTaskIcon(task.status)}</span>
+                    <span className="flex-1 truncate line-through">{task.name}</span>
                   </Button>
                 ))}
               </div>
             </>
           )}
-          
+
           {/* No tasks message */}
           {tasks.length === 0 && (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-2">No tasks yet</p>
-              <Button
-                onClick={onCreateClick}
-                variant="outline"
-                size="sm"
-              >
+            <div className="py-4 text-center">
+              <p className="text-muted-foreground mb-2 text-sm">No tasks yet</p>
+              <Button onClick={onCreateClick} variant="outline" size="sm">
                 Create your first task
               </Button>
             </div>

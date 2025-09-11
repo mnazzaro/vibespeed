@@ -1,66 +1,61 @@
 import { ipcMain, BrowserWindow, shell } from 'electron';
-import { authService } from '../services/auth';
+
+import { AuthResponse, GitHubInstallation, GitHubRepository, AuthToken, UserProfile } from '../../shared/types/auth';
 import { deepLinkHandler, DeepLinkData } from '../handlers/deepLink';
-import { 
-  AuthResponse, 
-  GitHubInstallation, 
-  GitHubRepository,
-  AuthToken,
-  UserProfile
-} from '../../shared/types/auth';
+import { authService } from '../services/auth';
 
 export class AuthIPCHandler {
   private static instance: AuthIPCHandler;
   private mainWindow: BrowserWindow | null = null;
-  
+
   private constructor() {
     this.setupHandlers();
     this.setupDeepLinkHandler();
   }
-  
+
   public static getInstance(): AuthIPCHandler {
     if (!AuthIPCHandler.instance) {
       AuthIPCHandler.instance = new AuthIPCHandler();
     }
     return AuthIPCHandler.instance;
   }
-  
+
   public setMainWindow(window: BrowserWindow): void {
     this.mainWindow = window;
   }
-  
+
   private setupHandlers(): void {
     // Start OAuth flow
     ipcMain.handle('auth:start-flow', async () => {
       try {
         const { authUrl, state } = await authService.startOAuthFlow();
-        
+
         // Open auth URL in default browser
         await authService.openAuthInBrowser();
-        
+
         // Wait for callback
-        const callbackPromise = deepLinkHandler.waitForAuthCallback();
-        
-        return { 
-          success: true, 
+        deepLinkHandler.waitForAuthCallback();
+
+        return {
+          success: true,
           authUrl,
           state,
-          waitingForCallback: true 
+          waitingForCallback: true,
         };
       } catch (error) {
         console.error('Failed to start auth flow:', error);
-        return { 
-          success: false, 
-          error: error.message || 'Failed to start authentication' 
+        return {
+          success: false,
+          error: error.message || 'Failed to start authentication',
         };
       }
     });
-    
+
     // Handle OAuth callback
     ipcMain.handle('auth:handle-callback', async (event, code: string, state: string) => {
       try {
         const response = await authService.handleOAuthCallback(code, state);
-        
+
         // Notify renderer of auth state change
         if (this.mainWindow && response.success) {
           this.mainWindow.webContents.send('auth:state-changed', {
@@ -69,7 +64,7 @@ export class AuthIPCHandler {
             installations: response.data?.installations,
           });
         }
-        
+
         return response;
       } catch (error) {
         console.error('Failed to handle callback:', error);
@@ -79,7 +74,7 @@ export class AuthIPCHandler {
         };
       }
     });
-    
+
     // Get user installations
     ipcMain.handle('auth:get-installations', async (): Promise<GitHubInstallation[]> => {
       try {
@@ -89,12 +84,12 @@ export class AuthIPCHandler {
         return [];
       }
     });
-    
+
     // Select an installation
     ipcMain.handle('auth:select-installation', async (event, installationId: number): Promise<AuthResponse> => {
       try {
         const response = await authService.selectInstallation(installationId);
-        
+
         // Notify renderer of installation change
         if (this.mainWindow && response.success) {
           this.mainWindow.webContents.send('auth:installation-selected', {
@@ -102,7 +97,7 @@ export class AuthIPCHandler {
             token: response.data?.token,
           });
         }
-        
+
         return response;
       } catch (error) {
         console.error('Failed to select installation:', error);
@@ -112,7 +107,7 @@ export class AuthIPCHandler {
         };
       }
     });
-    
+
     // Get current token
     ipcMain.handle('auth:get-current-token', async (): Promise<AuthToken | null> => {
       try {
@@ -122,7 +117,7 @@ export class AuthIPCHandler {
         return null;
       }
     });
-    
+
     // Refresh token
     ipcMain.handle('auth:refresh-token', async (): Promise<AuthResponse> => {
       try {
@@ -135,12 +130,12 @@ export class AuthIPCHandler {
         };
       }
     });
-    
+
     // Logout
     ipcMain.handle('auth:logout', async (): Promise<void> => {
       try {
         await authService.logout();
-        
+
         // Notify renderer of logout
         if (this.mainWindow) {
           this.mainWindow.webContents.send('auth:state-changed', {
@@ -154,7 +149,7 @@ export class AuthIPCHandler {
         throw error;
       }
     });
-    
+
     // Get current user
     ipcMain.handle('auth:get-user', async (): Promise<UserProfile | null> => {
       try {
@@ -164,7 +159,7 @@ export class AuthIPCHandler {
         return null;
       }
     });
-    
+
     // Get repositories for an installation
     ipcMain.handle('auth:get-repositories', async (event, installationId: number): Promise<GitHubRepository[]> => {
       try {
@@ -174,7 +169,7 @@ export class AuthIPCHandler {
         return [];
       }
     });
-    
+
     // Check authentication status
     ipcMain.handle('auth:is-authenticated', async (): Promise<boolean> => {
       try {
@@ -184,7 +179,7 @@ export class AuthIPCHandler {
         return false;
       }
     });
-    
+
     // Get complete auth state
     ipcMain.handle('auth:get-state', async () => {
       try {
@@ -192,7 +187,7 @@ export class AuthIPCHandler {
         const user = await authService.getCurrentUser();
         const installations = authService.getInstallations();
         const token = await authService.getCurrentToken();
-        
+
         return {
           isAuthenticated,
           user,
@@ -211,7 +206,7 @@ export class AuthIPCHandler {
         };
       }
     });
-    
+
     // Open external URL in system browser
     ipcMain.handle('app:open-external', async (event, url: string): Promise<void> => {
       try {
@@ -221,7 +216,7 @@ export class AuthIPCHandler {
         throw error;
       }
     });
-    
+
     // Get GitHub App installation URL
     ipcMain.handle('app:get-installation-url', async (): Promise<string> => {
       try {
@@ -234,7 +229,7 @@ export class AuthIPCHandler {
       }
     });
   }
-  
+
   private setupDeepLinkHandler(): void {
     // Handle auth callbacks from deep links
     deepLinkHandler.on('auth-callback', async (data: DeepLinkData) => {
@@ -242,11 +237,11 @@ export class AuthIPCHandler {
         // Full OAuth flow with state - handle normally
         try {
           const response = await authService.handleOAuthCallback(data.code, data.state);
-          
+
           // Notify renderer of completion
           if (this.mainWindow) {
             this.mainWindow.webContents.send('auth:callback-received', response);
-            
+
             if (response.success) {
               this.mainWindow.webContents.send('auth:state-changed', {
                 isAuthenticated: true,
@@ -257,7 +252,7 @@ export class AuthIPCHandler {
           }
         } catch (error) {
           console.error('Failed to handle deep link callback:', error);
-          
+
           if (this.mainWindow) {
             this.mainWindow.webContents.send('auth:callback-received', {
               success: false,
@@ -269,19 +264,19 @@ export class AuthIPCHandler {
         // Installation callback - just has code, no state
         // This happens when user adds a new GitHub App installation
         console.log('GitHub App installation callback received, refreshing installations...');
-        
+
         try {
           // If user is authenticated, refresh their installations
           if (await authService.isAuthenticated()) {
             const response = await authService.refreshUserData();
-            
+
             if (this.mainWindow && response.success) {
               this.mainWindow.webContents.send('auth:state-changed', {
                 isAuthenticated: true,
                 user: response.data?.user,
                 installations: response.data?.installations,
               });
-              
+
               console.log('Installations refreshed successfully');
             }
           }
@@ -299,26 +294,26 @@ export class AuthIPCHandler {
       }
     });
   }
-  
+
   public initialize(window: BrowserWindow): void {
     this.setMainWindow(window);
-    
+
     // Initialize deep link handler
     deepLinkHandler.initialize();
-    
+
     // Send initial auth state
     window.webContents.on('did-finish-load', async () => {
       const state = await this.getAuthState();
       window.webContents.send('auth:initial-state', state);
     });
   }
-  
+
   private async getAuthState() {
     const isAuthenticated = authService.isAuthenticated();
     const user = await authService.getCurrentUser();
     const installations = authService.getInstallations();
     const token = await authService.getCurrentToken();
-    
+
     return {
       isAuthenticated,
       user,

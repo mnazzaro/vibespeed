@@ -1,9 +1,11 @@
 import './index.css';
-import { app, BrowserWindow, session } from 'electron';
 import path from 'node:path';
+
+import { app, BrowserWindow, session } from 'electron';
 import started from 'electron-squirrel-startup';
-import { authIPCHandler } from './main/ipc/auth';
+
 import { deepLinkHandler } from './main/handlers/deepLink';
+import { authIPCHandler } from './main/ipc/auth';
 import { setupTaskHandlers } from './main/ipc/tasks';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -52,7 +54,7 @@ const createWindow = () => {
 
   // Initialize authentication IPC handler
   authIPCHandler.initialize(mainWindow);
-  
+
   // Initialize task IPC handlers
   setupTaskHandlers(mainWindow);
 
@@ -60,16 +62,14 @@ const createWindow = () => {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(
-      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
-    );
+    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
   // Open the DevTools in development
   if (process.env.APP_DEBUG === 'true' || process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools();
   }
-  
+
   return mainWindow;
 };
 
@@ -79,7 +79,7 @@ const createWindow = () => {
 app.on('ready', () => {
   // Initialize deep link handler
   deepLinkHandler.initialize();
-  
+
   // Create the main window
   createWindow();
 });

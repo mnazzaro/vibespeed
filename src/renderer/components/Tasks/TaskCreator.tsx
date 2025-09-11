@@ -1,9 +1,9 @@
+import { X, Search } from 'lucide-react';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { X, Plus, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 import { cn } from '@/lib/utils';
-import { useTaskStore } from '@/renderer/store/tasks';
 import { useAuthStore } from '@/renderer/store/auth';
+import { useTaskStore } from '@/renderer/store/tasks';
 
 interface TaskCreatorProps {
   onCancel: () => void;
@@ -15,58 +15,57 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
-  const [allRepos, setAllRepos] = useState<Array<{
-    id: number;
-    installationId: number;
-    name: string;
-    fullName: string;
-    defaultBranch: string;
-    installation: string;
-  }>>([]);
-  
-  const { 
-    selectedReposForNewTask,
-    addRepoToNewTask,
-    removeRepoFromNewTask,
-    finalizeTaskCreation
-  } = useTaskStore();
-  
+  const [allRepos, setAllRepos] = useState<
+    Array<{
+      id: number;
+      installationId: number;
+      name: string;
+      fullName: string;
+      defaultBranch: string;
+      installation: string;
+    }>
+  >([]);
+
+  const { selectedReposForNewTask, addRepoToNewTask, removeRepoFromNewTask, finalizeTaskCreation } = useTaskStore();
+
   const { installations, loadRepositories } = useAuthStore();
-  
+
   // Load all repositories from all installations
   useEffect(() => {
     const loadAllRepos = async () => {
       const repos = [];
-      
+
       for (const installation of installations) {
         try {
           const installationRepos = await loadRepositories(installation.id);
-          repos.push(...installationRepos.map(repo => ({
-            id: repo.id,
-            installationId: installation.id,
-            name: repo.name,
-            fullName: repo.full_name,
-            defaultBranch: repo.default_branch,
-            installation: installation.account.login
-          })));
+          repos.push(
+            ...installationRepos.map((repo) => ({
+              id: repo.id,
+              installationId: installation.id,
+              name: repo.name,
+              fullName: repo.full_name,
+              defaultBranch: repo.default_branch,
+              installation: installation.account.login,
+            }))
+          );
         } catch (error) {
           console.error(`Failed to load repos for ${installation.account.login}:`, error);
         }
       }
-      
+
       setAllRepos(repos);
     };
-    
+
     loadAllRepos();
   }, [installations]);
-  
+
   // Filter repos based on search query and exclude already selected ones
   const filteredRepos = useMemo(() => {
-    const selectedIds = new Set(selectedReposForNewTask.map(r => r.id));
-    
+    const selectedIds = new Set(selectedReposForNewTask.map((r) => r.id));
+
     return allRepos
-      .filter(repo => !selectedIds.has(repo.id))
-      .filter(repo => {
+      .filter((repo) => !selectedIds.has(repo.id))
+      .filter((repo) => {
         if (!searchQuery) return true;
         const query = searchQuery.toLowerCase();
         return (
@@ -77,17 +76,17 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
       })
       .slice(0, 10); // Limit to 10 results for performance
   }, [allRepos, searchQuery, selectedReposForNewTask]);
-  
+
   // Reset selected index when filtered results change
   useEffect(() => {
     setSelectedIndex(0);
   }, [filteredRepos]);
-  
+
   // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-  
+
   // Add global keyboard listener (separate effect to avoid re-creating on deps change)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -100,11 +99,11 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
         }
       }
     };
-    
+
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, []); // Empty deps - only set up once
-  
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to create task
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -116,18 +115,18 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
       }
       return;
     }
-    
+
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => Math.min(prev + 1, filteredRepos.length - 1));
+        setSelectedIndex((prev) => Math.min(prev + 1, filteredRepos.length - 1));
         break;
-        
+
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => Math.max(prev - 1, 0));
+        setSelectedIndex((prev) => Math.max(prev - 1, 0));
         break;
-        
+
       case 'Enter':
         e.preventDefault();
         if (filteredRepos[selectedIndex]) {
@@ -139,7 +138,7 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
         }
         // Removed the else clause that would create task on Enter with empty search
         break;
-        
+
       case 'Escape':
         e.preventDefault();
         if (searchQuery) {
@@ -150,7 +149,7 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
           handleFinalize();
         }
         break;
-        
+
       case 'Backspace':
         if (searchQuery === '' && selectedReposForNewTask.length > 0) {
           // Remove last selected repo
@@ -160,23 +159,23 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
         break;
     }
   };
-  
+
   const handleFinalize = useCallback(async () => {
     // Prevent duplicate creation
     if (isCreating) {
       console.log('Already creating task, skipping duplicate call');
       return;
     }
-    
+
     console.log('handleFinalize called with repos:', selectedReposForNewTask);
     if (selectedReposForNewTask.length === 0) {
       console.log('No repos selected, canceling');
       onCancel();
       return;
     }
-    
+
     setIsCreating(true);
-    
+
     try {
       console.log('Calling finalizeTaskCreation...');
       const task = await finalizeTaskCreation();
@@ -190,32 +189,29 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
       setIsCreating(false);
     }
   }, [selectedReposForNewTask, finalizeTaskCreation, onCancel, onComplete, isCreating]);
-  
+
   return (
-    <div className="border rounded-md bg-card p-2">
+    <div className="bg-card rounded-md border p-2">
       {/* Selected repos */}
       {selectedReposForNewTask.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-2">
-          {selectedReposForNewTask.map(repo => (
+        <div className="mb-2 flex flex-wrap gap-1">
+          {selectedReposForNewTask.map((repo) => (
             <div
               key={repo.id}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
+              className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs"
             >
               <span>{repo.name}</span>
-              <button
-                onClick={() => removeRepoFromNewTask(repo.id)}
-                className="hover:bg-primary/20 rounded p-0.5"
-              >
+              <button onClick={() => removeRepoFromNewTask(repo.id)} className="hover:bg-primary/20 rounded p-0.5">
                 <X className="h-2.5 w-2.5" />
               </button>
             </div>
           ))}
         </div>
       )}
-      
+
       {/* Search input */}
       <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-3 w-3 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-2.5 left-2 h-3 w-3" />
         <input
           ref={inputRef}
           type="text"
@@ -224,17 +220,17 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
           onKeyDown={handleKeyDown}
           placeholder={
             selectedReposForNewTask.length === 0
-              ? "Type repo name and press Enter..."
-              : "Add another repo or press Cmd+Enter to create task"
+              ? 'Type repo name and press Enter...'
+              : 'Add another repo or press Cmd+Enter to create task'
           }
-          className="w-full pl-7 pr-3 py-2 text-sm bg-transparent border-0 outline-none focus:ring-0"
+          className="w-full border-0 bg-transparent py-2 pr-3 pl-7 text-sm outline-none focus:ring-0"
         />
       </div>
-      
+
       {/* Filtered results */}
       {searchQuery && filteredRepos.length > 0 && (
         <div className="mt-2 border-t pt-2">
-          <div className="space-y-1 max-h-60 overflow-y-auto">
+          <div className="max-h-60 space-y-1 overflow-y-auto">
             {filteredRepos.map((repo, index) => (
               <button
                 key={repo.id}
@@ -244,42 +240,39 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
                   inputRef.current?.focus();
                 }}
                 className={cn(
-                  "w-full text-left px-2 py-1.5 rounded text-sm hover:bg-accent",
-                  index === selectedIndex && "bg-accent"
+                  'hover:bg-accent w-full rounded px-2 py-1.5 text-left text-sm',
+                  index === selectedIndex && 'bg-accent'
                 )}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{repo.name}</span>
-                  <span className="text-xs text-muted-foreground">{repo.installation}</span>
+                  <span className="text-muted-foreground text-xs">{repo.installation}</span>
                 </div>
-                <div className="text-xs text-muted-foreground">{repo.fullName}</div>
+                <div className="text-muted-foreground text-xs">{repo.fullName}</div>
               </button>
             ))}
           </div>
         </div>
       )}
-      
+
       {/* Help text */}
-      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+      <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
         <span className="inline-flex items-center gap-2">
-          <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd>
+          <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">Enter</kbd>
           Add repo
           {selectedReposForNewTask.length > 0 && (
             <>
               <span className="text-muted-foreground/50">•</span>
-              <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">⌘ Enter</kbd>
+              <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">⌘ Enter</kbd>
               Create task
             </>
           )}
           <span className="text-muted-foreground/50">•</span>
-          <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Esc</kbd>
+          <kbd className="bg-muted rounded px-1 py-0.5 text-[10px]">Esc</kbd>
           Cancel
         </span>
         {selectedReposForNewTask.length > 0 && (
-          <button
-            onClick={handleFinalize}
-            className="text-xs text-primary hover:text-primary/80 underline"
-          >
+          <button onClick={handleFinalize} className="text-primary hover:text-primary/80 text-xs underline">
             Create Task
           </button>
         )}
