@@ -319,9 +319,226 @@ export class GitManager {
     return status;
   }
 
+  public async getDiffStats(
+    worktreePath: string
+  ): Promise<Record<string, { additions: number; deletions: number; binary?: boolean }>> {
+    if (!fs.existsSync(worktreePath)) {
+      return {};
+    }
+
+    const git: SimpleGit = simpleGit(worktreePath);
+    const diffs: Record<string, { additions: number; deletions: number; binary?: boolean }> = {};
+
+    try {
+      // Get diff stats for staged files
+      const stagedDiff = await git.raw(['diff', '--staged', '--numstat']);
+      this.parseDiffStats(stagedDiff, diffs);
+
+      // Get diff stats for unstaged files
+      const unstagedDiff = await git.raw(['diff', '--numstat']);
+      this.parseDiffStats(unstagedDiff, diffs);
+
+      // Get untracked files (they don't have diffs yet)
+      const status = await git.status();
+      status.not_added.forEach((file) => {
+        if (!diffs[file]) {
+          // For untracked files, count all lines as additions
+          try {
+            const filePath = path.join(worktreePath, file);
+            if (fs.existsSync(filePath)) {
+              const content = fs.readFileSync(filePath, 'utf-8');
+              const lines = content.split('\n').length;
+              diffs[file] = { additions: lines, deletions: 0 };
+            }
+          } catch {
+            // If we can't read the file, just mark it as having changes
+            diffs[file] = { additions: 0, deletions: 0 };
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to get diff stats:', error);
+    }
+
+    return diffs;
+  }
+
+  private parseDiffStats(
+    diffOutput: string,
+    diffs: Record<string, { additions: number; deletions: number; binary?: boolean }>
+  ) {
+    const lines = diffOutput.split('\n').filter((line) => line.trim());
+
+    for (const line of lines) {
+      const parts = line.split('\t');
+      if (parts.length === 3) {
+        const [additions, deletions, file] = parts;
+
+        if (additions === '-' && deletions === '-') {
+          // Binary file
+          diffs[file] = { additions: 0, deletions: 0, binary: true };
+        } else {
+          diffs[file] = {
+            additions: parseInt(additions, 10) || 0,
+            deletions: parseInt(deletions, 10) || 0,
+          };
+        }
+      }
+    }
+  }
+
+  public async stageFiles(worktreePath: string, files: string[]): Promise<void> {
+    if (!fs.existsSync(worktreePath)) {
+      throw new Error('Worktree path does not exist');
+    }
+
+    const git: SimpleGit = simpleGit(worktreePath);
+    await git.add(files);
+  }
+
+  public async unstageFiles(worktreePath: string, files: string[]): Promise<void> {
+    if (!fs.existsSync(worktreePath)) {
+      throw new Error('Worktree path does not exist');
+    }
+
+    const git: SimpleGit = simpleGit(worktreePath);
+    await git.reset(['HEAD', ...files]);
+  }
+
+  public async getFileDiff(worktreePath: string, filePath: string): Promise<string> {
+    if (!fs.existsSync(worktreePath)) {
+      throw new Error('Worktree path does not exist');
+    }
+
+    const git: SimpleGit = simpleGit(worktreePath);
+
+    try {
+      // Check if file is staged
+      const status = await git.status();
+      const isStaged = status.staged.includes(filePath);
+      const isUntracked = status.not_added.includes(filePath);
+
+      if (isUntracked) {
+        // For untracked files, return the entire file content as additions
+        const fullPath = path.join(worktreePath, filePath);
+        if (fs.existsSync(fullPath)) {
+          const content = fs.readFileSync(fullPath, 'utf-8');
+          const lines = content.split('\n');
+          return lines.map((line) => `+${line}`).join('\n');
+        }
+        return '';
+      }
+
+      // Get diff for the file
+      let diff = '';
+
+      if (isStaged) {
+        // Get staged diff
+        diff = await git.diff(['--staged', '--', filePath]);
+      }
+
+      if (!diff) {
+        // Get unstaged diff
+        diff = await git.diff(['--', filePath]);
+      }
+
+      return diff;
+    } catch (error) {
+      console.error('Failed to get file diff:', error);
+      return '';
+    }
+  }
+
+  public async getFileContext(
+    worktreePath: string,
+    filePath: string,
+    startLine: number,
+    endLine: number
+  ): Promise<string[]> {
+    const fullPath = path.join(worktreePath, filePath);
+
+    if (!fs.existsSync(fullPath)) {
+      return [];
+    }
+
+    try {
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      const lines = content.split('\n');
+
+      // Adjust for 0-based indexing
+      const start = Math.max(0, startLine - 1);
+      const end = Math.min(lines.length, endLine);
+
+      return lines.slice(start, end);
+    } catch (error) {
+      console.error('Failed to read file context:', error);
+      return [];
+    }
+  }
+
+  public async getFullFileDiff(worktreePath: string, filePath: string, contextLines: number = 3): Promise<string> {
+    if (!fs.existsSync(worktreePath)) {
+      throw new Error('Worktree path does not exist');
+    }
+
+    const git: SimpleGit = simpleGit(worktreePath);
+
+    try {
+      // Check if file is staged
+      const status = await git.status();
+      const isStaged = status.staged.includes(filePath);
+      const isUntracked = status.not_added.includes(filePath);
+
+      if (isUntracked) {
+        // For untracked files, return the entire file content as additions
+        const fullPath = path.join(worktreePath, filePath);
+        if (fs.existsSync(fullPath)) {
+          const content = fs.readFileSync(fullPath, 'utf-8');
+          const lines = content.split('\n');
+          // Add header for untracked file
+          const header = [
+            `diff --git a/${filePath} b/${filePath}`,
+            'new file mode 100644',
+            'index 0000000..0000000',
+            '--- /dev/null',
+            `+++ b/${filePath}`,
+            `@@ -0,0 +1,${lines.length} @@`,
+          ].join('\n');
+          const diffContent = lines.map((line) => `+${line}`).join('\n');
+          return `${header}\n${diffContent}`;
+        }
+        return '';
+      }
+
+      // Get diff with specified context lines
+      let diff = '';
+
+      if (isStaged) {
+        // Get staged diff with context
+        diff = await git.diff(['--staged', `-U${contextLines}`, '--', filePath]);
+      }
+
+      if (!diff) {
+        // Get unstaged diff with context
+        diff = await git.diff([`-U${contextLines}`, '--', filePath]);
+      }
+
+      return diff;
+    } catch (error) {
+      console.error('Failed to get full file diff:', error);
+      return '';
+    }
+  }
+
   public async commitChanges(worktreePath: string, message: string): Promise<void> {
     const git: SimpleGit = simpleGit(worktreePath);
-    await git.add('.');
+
+    // Check if there are staged changes
+    const status = await git.status();
+    if (status.staged.length === 0) {
+      throw new Error('No staged changes to commit');
+    }
+
     await git.commit(message);
   }
 

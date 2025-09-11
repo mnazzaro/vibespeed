@@ -150,6 +150,50 @@ const tasksAPI = {
     return await ipcRenderer.invoke('task:openInEditor', taskId, repositoryName);
   },
 
+  getGitStatus: async (taskId: string): Promise<TaskIPCResponse<any>> => {
+    return await ipcRenderer.invoke('task:getGitStatus', taskId);
+  },
+
+  getGitDiff: async (taskId: string, repoName: string): Promise<TaskIPCResponse<any>> => {
+    return await ipcRenderer.invoke('task:getGitDiff', taskId, repoName);
+  },
+
+  stageFiles: async (
+    taskId: string,
+    repoName: string,
+    files: string[],
+    stage: boolean
+  ): Promise<TaskIPCResponse<void>> => {
+    return await ipcRenderer.invoke('task:stageFiles', taskId, repoName, files, stage);
+  },
+
+  getFileDiff: async (taskId: string, repoName: string, filePath: string): Promise<TaskIPCResponse<string>> => {
+    return await ipcRenderer.invoke('task:getFileDiff', taskId, repoName, filePath);
+  },
+
+  getFileContext: async (
+    taskId: string,
+    repoName: string,
+    filePath: string,
+    startLine: number,
+    endLine: number
+  ): Promise<TaskIPCResponse<string[]>> => {
+    return await ipcRenderer.invoke('task:getFileContext', taskId, repoName, filePath, startLine, endLine);
+  },
+
+  getFullFileDiff: async (
+    taskId: string,
+    repoName: string,
+    filePath: string,
+    context?: number
+  ): Promise<TaskIPCResponse<string>> => {
+    return await ipcRenderer.invoke('task:getFullFileDiff', taskId, repoName, filePath, context);
+  },
+
+  commit: async (taskId: string, repoName: string, message: string): Promise<TaskIPCResponse<void>> => {
+    return await ipcRenderer.invoke('task:commit', taskId, repoName, message);
+  },
+
   // Event listeners
   onWorktreeProgress: (callback: (progress: WorktreeProgress) => void) => {
     ipcRenderer.on('task:worktree-progress', (event, progress) => callback(progress));
