@@ -189,7 +189,6 @@ export class ClaudeService {
       let sessionId = task.sessionId;
       let isInThinkingBlock = false;
       let intermediateText = ''; // Text between tool calls
-      // let isCollectingFinalText = false; // Track if we're collecting final response text
       let currentToolInputJson = ''; // Accumulate tool input JSON string during streaming
       let currentToolId: string | null = null; // Track current tool being streamed
       let currentToolName: string | null = null; // Track current tool name
