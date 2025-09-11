@@ -6,6 +6,7 @@ import started from 'electron-squirrel-startup';
 
 import { deepLinkHandler } from './main/handlers/deepLink';
 import { authIPCHandler } from './main/ipc/auth';
+import { setupClaudeHandlers } from './main/ipc/claude';
 import { setupTaskHandlers } from './main/ipc/tasks';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -57,6 +58,9 @@ const createWindow = () => {
 
   // Initialize task IPC handlers
   setupTaskHandlers(mainWindow);
+
+  // Initialize Claude IPC handlers
+  setupClaudeHandlers(mainWindow);
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {

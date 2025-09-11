@@ -218,21 +218,7 @@ export function setupTaskHandlers(mainWindow: BrowserWindow): void {
           throw new Error('Failed to add message');
         }
 
-        // TODO: Here we'll integrate with Claude API later
-        // For now, just echo back the message
-        if (message.role === 'user') {
-          setTimeout(() => {
-            const response = taskManager.addMessage(taskId, {
-              role: 'assistant',
-              content: `Echo: ${message.content}`,
-              metadata: {},
-            });
-
-            if (response) {
-              mainWindow.webContents.send('task:message-received', taskId, response);
-            }
-          }, 500);
-        }
+        // Claude integration happens via the ClaudeService now
 
         return {
           success: true,

@@ -4,6 +4,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { AuthResponse, GitHubInstallation, GitHubRepository, AuthToken, UserProfile } from './shared/types/auth';
+import type {
+  ClaudeQueryOptions,
+  ClaudeIPCResponse,
+  ClaudeServiceStatus,
+  ClaudeStreamEvent,
+} from './shared/types/claude';
 import type { Task, CreateTaskParams, TaskIPCResponse, ChatMessage, WorktreeProgress } from './shared/types/tasks';
 
 // Define the API that will be exposed to the renderer
@@ -153,9 +159,48 @@ const tasksAPI = {
     ipcRenderer.on('task:message-received', (event, taskId, message) => callback(taskId, message));
   },
 
+  onTaskUpdated: (callback: (taskId: string, task: Task) => void) => {
+    ipcRenderer.on('task:updated', (event, taskId, task) => callback(taskId, task));
+  },
+
   removeTaskListeners: () => {
     ipcRenderer.removeAllListeners('task:worktree-progress');
     ipcRenderer.removeAllListeners('task:message-received');
+    ipcRenderer.removeAllListeners('task:updated');
+  },
+};
+
+// Define Claude API
+const claudeAPI = {
+  sendMessage: async (
+    taskId: string,
+    message: string,
+    options?: Partial<ClaudeQueryOptions>
+  ): Promise<ClaudeIPCResponse<{ messageId: string }>> => {
+    return await ipcRenderer.invoke('claude:sendMessage', taskId, message, options);
+  },
+
+  cancelQuery: async (messageId: string): Promise<ClaudeIPCResponse<boolean>> => {
+    return await ipcRenderer.invoke('claude:cancelQuery', messageId);
+  },
+
+  getStatus: async (): Promise<ClaudeIPCResponse<ClaudeServiceStatus>> => {
+    return await ipcRenderer.invoke('claude:getStatus');
+  },
+
+  cancelAll: async (): Promise<ClaudeIPCResponse<void>> => {
+    return await ipcRenderer.invoke('claude:cancelAll');
+  },
+
+  // Event listeners
+  onStreamEvent: (callback: (taskId: string, messageId: string, event: ClaudeStreamEvent) => void) => {
+    ipcRenderer.on('claude:stream-event', (event, taskId, messageId, streamEvent) =>
+      callback(taskId, messageId, streamEvent)
+    );
+  },
+
+  removeClaudeListeners: () => {
+    ipcRenderer.removeAllListeners('claude:stream-event');
   },
 };
 
@@ -164,6 +209,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   auth: authAPI,
   app: appAPI,
   tasks: tasksAPI,
+  claude: claudeAPI,
 });
 
 // Type definitions for TypeScript
@@ -171,6 +217,7 @@ export type ElectronAPI = {
   auth: typeof authAPI;
   app: typeof appAPI;
   tasks: typeof tasksAPI;
+  claude: typeof claudeAPI;
 };
 
 declare global {

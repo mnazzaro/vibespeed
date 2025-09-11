@@ -64,7 +64,7 @@ export const TaskView: React.FC<TaskViewProps> = ({ task: propTask }) => {
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-hidden">
       <TaskHeader task={task} />
 
       {isInitializing ? (
