@@ -283,6 +283,10 @@ const claudeAPI = {
     return await ipcRenderer.invoke('claude:cancelAll');
   },
 
+  getLogFilePath: async (): Promise<ClaudeIPCResponse<string>> => {
+    return await ipcRenderer.invoke('claude:getLogFilePath');
+  },
+
   // Event listeners
   onStreamEvent: (callback: (taskId: string, messageId: string, event: ClaudeStreamEvent) => void) => {
     ipcRenderer.on('claude:stream-event', (event, taskId, messageId, streamEvent) =>

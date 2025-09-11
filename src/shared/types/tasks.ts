@@ -7,6 +7,7 @@ export interface Task {
   createdAt: Date;
   updatedAt: Date;
   messages: ChatMessage[];
+  sessionId?: string; // Claude conversation session ID for maintaining context
 }
 
 export interface TaskRepository {
@@ -23,10 +24,11 @@ export interface TaskRepository {
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'thinking';
   content: string;
   timestamp: Date;
   metadata?: Record<string, any>;
+  thinkingBlocks?: string[]; // Store thinking blocks separately
 }
 
 export interface CreateTaskParams {

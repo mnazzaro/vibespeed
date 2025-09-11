@@ -1,4 +1,4 @@
-import { GitBranch, Folder, Code, Check, AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { GitBranch, Folder, Code, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -25,13 +25,13 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ task }) => {
   const getRepoStatusIcon = (status: TaskRepository['status']) => {
     switch (status) {
       case 'initializing':
-        return <Loader2 className="h-3 w-3 animate-spin" />;
+        return <Loader2 className="h-2.5 w-2.5 animate-spin" />;
       case 'ready':
-        return <Check className="h-3 w-3 text-green-600" />;
+        return <Code className="h-2.5 w-2.5 text-green-600" />;
       case 'error':
-        return <AlertCircle className="h-3 w-3 text-red-600" />;
+        return <AlertCircle className="h-2.5 w-2.5 text-red-600" />;
       default:
-        return <GitBranch className="h-3 w-3" />;
+        return <GitBranch className="h-2.5 w-2.5" />;
     }
   };
 
@@ -65,9 +65,8 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ task }) => {
   };
 
   return (
-    <header className="bg-card flex flex-col gap-3 border-b px-6 py-4">
-      {/* Task name */}
-      <div className="flex items-center gap-3">
+    <header className="bg-card flex items-start gap-3 px-6 py-3">
+      <div className="flex flex-1 flex-col gap-1">
         {editingName ? (
           <input
             type="text"
@@ -81,84 +80,56 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ task }) => {
                 setEditingName(false);
               }
             }}
-            className="border-primary flex-1 border-b bg-transparent text-lg font-semibold outline-none"
+            className="border-primary border-b bg-transparent text-base font-semibold outline-none"
             autoFocus
           />
         ) : (
-          <h2
-            className="hover:text-primary flex-1 cursor-pointer text-lg font-semibold"
-            onClick={() => setEditingName(true)}
-          >
-            {task.name}
-          </h2>
+          <>
+            <h2
+              className="hover:text-primary cursor-pointer text-base font-semibold"
+              onClick={() => setEditingName(true)}
+            >
+              {task.name}
+            </h2>
+          </>
         )}
 
-        <Button variant="ghost" size="sm" onClick={handleOpenInExplorer}>
-          <Folder className="mr-2 h-4 w-4" />
-          Open Folder
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          className="hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete Task
-        </Button>
+        {/* Repository pills */}
+        <div className="mt-1 flex gap-1.5">
+          {task.repositories.map((repo) => (
+            <button
+              key={repo.id}
+              onClick={() => handleOpenInEditor(repo)}
+              disabled={repo.status !== 'ready'}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors',
+                getRepoStatusColor(repo.status),
+                repo.status === 'ready' && 'hover:bg-accent cursor-pointer'
+              )}
+              title={repo.status === 'ready' ? 'Open in VS Code' : repo.errorMessage || repo.status}
+            >
+              {getRepoStatusIcon(repo.status)}
+              <span className="font-medium">{repo.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Repository badges */}
-      <div className="flex flex-wrap gap-2">
-        {task.repositories.map((repo) => (
-          <div
-            key={repo.id}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm',
-              getRepoStatusColor(repo.status)
-            )}
-          >
-            {getRepoStatusIcon(repo.status)}
-            <span className="font-medium">{repo.name}</span>
-            <span className="text-muted-foreground text-xs">{repo.taskBranch}</span>
+      {/* Actions */}
+      <Button variant="ghost" size="sm" onClick={handleOpenInExplorer}>
+        <Folder className="mr-2 h-4 w-4" />
+        Open Folder
+      </Button>
 
-            {repo.status === 'ready' && (
-              <button
-                onClick={() => handleOpenInEditor(repo)}
-                className="hover:text-primary ml-1"
-                title="Open in VS Code"
-              >
-                <Code className="h-3 w-3" />
-              </button>
-            )}
-
-            {repo.status === 'error' && repo.errorMessage && (
-              <span className="text-xs text-red-600" title={repo.errorMessage}>
-                !
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Status line */}
-      <div className="text-muted-foreground flex items-center gap-4 text-xs">
-        <span>Created {new Date(task.createdAt).toLocaleDateString()}</span>
-        <span>•</span>
-        <span>{task.messages.length} messages</span>
-        <span>•</span>
-        <span
-          className={cn(
-            'capitalize',
-            task.status === 'active' && 'text-green-600',
-            task.status === 'completed' && 'text-blue-600',
-            task.status === 'archived' && 'text-gray-600'
-          )}
-        >
-          {task.status}
-        </span>
-      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleDelete}
+        className="hover:bg-destructive/10 hover:text-destructive"
+      >
+        <Trash2 className="mr-2 h-4 w-4" />
+        Delete
+      </Button>
     </header>
   );
 };

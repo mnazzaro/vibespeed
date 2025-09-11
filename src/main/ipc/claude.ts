@@ -3,7 +3,17 @@ import { ipcMain, BrowserWindow } from 'electron';
 import { ClaudeQueryOptions, ClaudeIPCResponse, ClaudeServiceStatus } from '../../shared/types/claude';
 import { ClaudeService } from '../services/claudeService';
 
+let handlersRegistered = false;
+
 export function setupClaudeHandlers(mainWindow: BrowserWindow): void {
+  // Prevent double registration
+  if (handlersRegistered) {
+    console.log('[Claude] IPC handlers already registered, skipping...');
+    return;
+  }
+  handlersRegistered = true;
+  console.log('[Claude] Registering IPC handlers...');
+
   const claudeService = ClaudeService.getInstance();
   claudeService.setMainWindow(mainWindow);
 
@@ -78,6 +88,23 @@ export function setupClaudeHandlers(mainWindow: BrowserWindow): void {
       return {
         success: false,
         error: error.message || 'Failed to cancel all queries',
+      };
+    }
+  });
+
+  // Get log file path
+  ipcMain.handle('claude:getLogFilePath', async (): Promise<ClaudeIPCResponse<string>> => {
+    try {
+      const logPath = claudeService.getLogFilePath();
+      return {
+        success: true,
+        data: logPath,
+      };
+    } catch (error) {
+      console.error('Failed to get log file path:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to get log file path',
       };
     }
   });

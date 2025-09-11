@@ -4,7 +4,17 @@ import { CreateTaskParams, TaskIPCResponse, Task, ChatMessage, WorktreeProgress 
 import { GitManager } from '../services/gitManager';
 import { TaskManager } from '../services/taskManager';
 
+let handlersRegistered = false;
+
 export function setupTaskHandlers(mainWindow: BrowserWindow): void {
+  // Prevent double registration
+  if (handlersRegistered) {
+    console.log('[Tasks] IPC handlers already registered, skipping...');
+    return;
+  }
+  handlersRegistered = true;
+  console.log('[Tasks] Registering IPC handlers...');
+
   const taskManager = TaskManager.getInstance();
   const gitManager = GitManager.getInstance();
 
