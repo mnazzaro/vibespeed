@@ -103,9 +103,6 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
           {tasks.length === 0 && (
             <div className="py-4 text-center">
               <p className="text-muted-foreground mb-2 text-sm">No tasks yet</p>
-              <Button onClick={onCreateClick} variant="outline" size="sm">
-                Create your first task
-              </Button>
             </div>
           )}
         </>

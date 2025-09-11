@@ -194,14 +194,17 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
     <div className="bg-card rounded-md border p-2">
       {/* Selected repos */}
       {selectedReposForNewTask.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1">
+        <div className="mb-2 flex flex-col gap-1">
           {selectedReposForNewTask.map((repo) => (
             <div
               key={repo.id}
-              className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs"
+              className="bg-primary/10 text-primary flex w-full items-center justify-center gap-1 rounded-md px-2 py-1 text-xs"
             >
               <span>{repo.name}</span>
-              <button onClick={() => removeRepoFromNewTask(repo.id)} className="hover:bg-primary/20 rounded p-0.5">
+              <button
+                onClick={() => removeRepoFromNewTask(repo.id)}
+                className="hover:bg-primary/20 ml-auto rounded p-0.5"
+              >
                 <X className="h-2.5 w-2.5" />
               </button>
             </div>
@@ -211,7 +214,7 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCancel, onComplete }
 
       {/* Search input */}
       <div className="relative">
-        <Search className="text-muted-foreground absolute top-2.5 left-2 h-3 w-3" />
+        <Search className="text-muted-foreground absolute top-2.75 left-2 h-3 w-3" />
         <input
           ref={inputRef}
           type="text"
