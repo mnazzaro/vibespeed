@@ -1,6 +1,7 @@
 import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+
 import { App } from './renderer/App';
 
 // Create root element if it doesn't exist

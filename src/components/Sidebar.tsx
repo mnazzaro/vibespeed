@@ -1,10 +1,14 @@
+import { ChevronRight, Github, User, LogOut, Plus } from 'lucide-react';
 import React, { useState } from 'react';
-import { ChevronRight, Github, User, LogOut, Plus, ExternalLink } from 'lucide-react';
+
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { TaskCreator } from '@/renderer/components/Tasks/TaskCreator';
+import { TaskList } from '@/renderer/components/Tasks/TaskList';
 import { useAuthStore } from '@/renderer/store/auth';
+import { useTaskStore } from '@/renderer/store/tasks';
 
 interface Installation {
   id: number;
@@ -22,15 +26,17 @@ interface Installation {
 }
 
 export const Sidebar: React.FC = () => {
-  const { installations, currentInstallation, isAuthenticated, user, loadRepositories, selectInstallation, logout } = useAuthStore();
+  const { installations, currentInstallation, isAuthenticated, user, loadRepositories, selectInstallation, logout } =
+    useAuthStore();
+  const { startTaskCreation, cancelTaskCreation, isCreatingTask } = useTaskStore();
   const [expandedInstallations, setExpandedInstallations] = useState<Set<number>>(new Set());
   const [installationRepos, setInstallationRepos] = useState<Record<number, any[]>>({});
   const [loadingRepos, setLoadingRepos] = useState<Set<number>>(new Set());
 
   const toggleInstallation = async (installationId: number) => {
     const isExpanding = !expandedInstallations.has(installationId);
-    
-    setExpandedInstallations(prev => {
+
+    setExpandedInstallations((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(installationId)) {
         newSet.delete(installationId);
@@ -41,14 +47,14 @@ export const Sidebar: React.FC = () => {
     });
 
     if (isExpanding && !installationRepos[installationId]) {
-      setLoadingRepos(prev => new Set(prev).add(installationId));
+      setLoadingRepos((prev) => new Set(prev).add(installationId));
       try {
         const repos = await loadRepositories(installationId);
-        setInstallationRepos(prev => ({ ...prev, [installationId]: repos }));
+        setInstallationRepos((prev) => ({ ...prev, [installationId]: repos }));
       } catch (error) {
         console.error('Failed to load repositories:', error);
       } finally {
-        setLoadingRepos(prev => {
+        setLoadingRepos((prev) => {
           const newSet = new Set(prev);
           newSet.delete(installationId);
           return newSet;
@@ -65,13 +71,13 @@ export const Sidebar: React.FC = () => {
   const handleAddInstallation = async () => {
     const installationUrl = await window.electronAPI.app.getInstallationUrl();
     await window.electronAPI.app.openExternal(installationUrl);
-    
+
     // Installations will automatically refresh via the auth:state-changed event
     // when the OAuth callback is received after the user adds the installation
   };
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-muted/10">
+    <div className="bg-muted/10 flex h-full w-64 flex-col border-r">
       {/* Header */}
       <div className="flex h-14 items-center border-b px-4">
         <h1 className="text-lg font-semibold">Vibespeed</h1>
@@ -80,84 +86,78 @@ export const Sidebar: React.FC = () => {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {isAuthenticated ? (
-          <div className="space-y-2">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xs font-semibold uppercase text-muted-foreground">
-                  GitHub Installations
-                </h2>
-                <Button
-                  onClick={handleAddInstallation}
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add
-                </Button>
-              </div>
+          <div className="space-y-4">
+            {/* Tasks Section */}
+            <div className="border-b pb-4">
+              {isCreatingTask ? (
+                <TaskCreator onCancel={cancelTaskCreation} onComplete={cancelTaskCreation} />
+              ) : (
+                <TaskList onCreateClick={startTaskCreation} />
+              )}
             </div>
-            
-            {installations?.map((installation) => (
-              <Collapsible
-                key={installation.id}
-                open={expandedInstallations.has(installation.id)}
-                onOpenChange={() => toggleInstallation(installation.id)}
-              >
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      "w-full justify-start",
-                      currentInstallation?.id === installation.id && "bg-accent"
-                    )}
-                    onClick={() => handleInstallationClick(installation)}
-                  >
-                    <ChevronRight
-                      className={cn(
-                        "mr-2 h-4 w-4 transition-transform",
-                        expandedInstallations.has(installation.id) && "rotate-90"
-                      )}
-                    />
-                    <Github className="mr-2 h-4 w-4" />
-                    <span className="truncate">{installation.account.login}</span>
+
+            {/* GitHub Installations Section */}
+            <div className="space-y-2">
+              <div className="mb-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-muted-foreground text-xs font-semibold uppercase">GitHub Installations</h2>
+                  <Button onClick={handleAddInstallation} variant="ghost" size="sm" className="h-7 px-2">
+                    <Plus className="mr-1 h-3 w-3" />
+                    Add
                   </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="ml-4 space-y-1 py-1">
-                    {loadingRepos.has(installation.id) ? (
-                      <div className="flex items-center justify-center py-2">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-                      </div>
-                    ) : installationRepos[installation.id]?.length ? (
-                      installationRepos[installation.id].map((repo) => (
-                        <Button
-                          key={repo.id}
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start pl-8 text-sm"
-                        >
-                          <span className="truncate">{repo.name}</span>
-                          {repo.private && (
-                            <span className="ml-auto text-xs text-muted-foreground">Private</span>
-                          )}
-                        </Button>
-                      ))
-                    ) : (
-                      <p className="pl-8 text-sm text-muted-foreground">No repositories</p>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-            
-            {!installations?.length && (
-              <p className="text-sm text-muted-foreground">No installations found</p>
-            )}
+                </div>
+              </div>
+
+              {installations?.map((installation) => (
+                <Collapsible key={installation.id} open={expandedInstallations.has(installation.id)}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn('w-full justify-start', currentInstallation?.id === installation.id && 'bg-accent')}
+                      onClick={() => handleInstallationClick(installation)}
+                    >
+                      <ChevronRight
+                        className={cn(
+                          'mr-2 h-4 w-4 transition-transform',
+                          expandedInstallations.has(installation.id) && 'rotate-90'
+                        )}
+                      />
+                      <Avatar className="mr-2 h-5 w-5">
+                        <AvatarImage src={installation.account.avatar_url} alt={installation.account.login} />
+                        <AvatarFallback className="text-xs">
+                          <Github className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{installation.account.login}</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="ml-4 space-y-1 py-1">
+                      {loadingRepos.has(installation.id) ? (
+                        <div className="flex items-center justify-center py-2">
+                          <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
+                        </div>
+                      ) : installationRepos[installation.id]?.length ? (
+                        installationRepos[installation.id].map((repo) => (
+                          <Button key={repo.id} variant="ghost" size="sm" className="w-full justify-start pl-8 text-sm">
+                            <span className="truncate">{repo.name}</span>
+                            {repo.private && <span className="text-muted-foreground ml-auto text-xs">Private</span>}
+                          </Button>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground pl-8 text-sm">No repositories</p>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+
+              {!installations?.length && <p className="text-muted-foreground text-sm">No installations found</p>}
+            </div>
           </div>
         ) : (
           <div className="text-center">
-            <p className="text-sm text-muted-foreground">Sign in to view installations</p>
+            <p className="text-muted-foreground text-sm">Sign in to view installations</p>
           </div>
         )}
       </div>
@@ -174,16 +174,11 @@ export const Sidebar: React.FC = () => {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium truncate">{user.name || user.login}</p>
-                <p className="text-xs text-muted-foreground truncate">@{user.login}</p>
+                <p className="truncate text-sm font-medium">{user.name || user.login}</p>
+                <p className="text-muted-foreground truncate text-xs">@{user.login}</p>
               </div>
             </div>
-            <Button 
-              onClick={() => logout()}
-              variant="outline" 
-              size="sm" 
-              className="w-full"
-            >
+            <Button onClick={() => logout()} variant="outline" size="sm" className="w-full">
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </Button>
@@ -196,7 +191,7 @@ export const Sidebar: React.FC = () => {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Not signed in</p>
+              <p className="text-muted-foreground text-sm">Not signed in</p>
             </div>
           </div>
         )}

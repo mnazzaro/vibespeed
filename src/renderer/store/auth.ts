@@ -1,11 +1,6 @@
 import { create } from 'zustand';
-import { 
-  AuthState, 
-  GitHubInstallation, 
-  UserProfile,
-  AuthToken,
-  GitHubRepository 
-} from '../../shared/types/auth';
+
+import { AuthState, GitHubRepository } from '../../shared/types/auth';
 
 interface AuthStore extends AuthState {
   // Actions
@@ -28,18 +23,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   currentInstallation: null,
   token: null,
   error: null,
-  
+
   // Actions
   login: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const result = await window.electronAPI.auth.startFlow();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to start authentication flow');
       }
-      
+
       // The auth flow will continue via deep link callback
       // Listen for the callback
       window.electronAPI.auth.onCallbackReceived((response) => {
@@ -65,10 +60,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
     }
   },
-  
+
   logout: async () => {
     set({ isLoading: true });
-    
+
     try {
       await window.electronAPI.auth.logout();
       set({
@@ -87,15 +82,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
     }
   },
-  
+
   selectInstallation: async (installationId: number) => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await window.electronAPI.auth.selectInstallation(installationId);
-      
+
       if (response.success) {
-        const installation = get().installations.find(i => i.id === installationId);
+        const installation = get().installations.find((i) => i.id === installationId);
         set({
           currentInstallation: installation || null,
           token: response.data?.token || null,
@@ -111,13 +106,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
     }
   },
-  
+
   refreshAuth: async () => {
     set({ isLoading: true, error: null });
-    
+
     try {
       const response = await window.electronAPI.auth.refreshToken();
-      
+
       if (response.success) {
         set({
           user: response.data?.user || get().user,
@@ -134,7 +129,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
     }
   },
-  
+
   loadRepositories: async (installationId: number) => {
     try {
       const repositories = await window.electronAPI.auth.getRepositories(installationId);
@@ -144,22 +139,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return [];
     }
   },
-  
+
   setLoading: (loading: boolean) => {
     set({ isLoading: loading });
   },
-  
+
   setError: (error: string | null) => {
     set({ error });
   },
-  
+
   initialize: async () => {
     set({ isLoading: true });
-    
+
     try {
       // Get initial auth state
       const state = await window.electronAPI.auth.getState();
-      
+
       set({
         isAuthenticated: state.isAuthenticated,
         user: state.user,
@@ -168,7 +163,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         token: state.token,
         isLoading: false,
       });
-      
+
       // Set up event listeners
       window.electronAPI.auth.onStateChanged((data) => {
         set({
@@ -177,9 +172,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           installations: data.installations,
         });
       });
-      
+
       window.electronAPI.auth.onInstallationSelected((data) => {
-        const installation = get().installations.find(i => i.id === data.installationId);
+        const installation = get().installations.find((i) => i.id === data.installationId);
         set({
           currentInstallation: installation || null,
           token: data.token,
