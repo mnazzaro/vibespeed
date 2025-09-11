@@ -7,7 +7,9 @@ import started from 'electron-squirrel-startup';
 import { deepLinkHandler } from './main/handlers/deepLink';
 import { authIPCHandler } from './main/ipc/auth';
 import { setupClaudeHandlers } from './main/ipc/claude';
+import { fileManager } from './main/ipc/files';
 import { setupTaskHandlers } from './main/ipc/tasks';
+import { terminalManager } from './main/ipc/terminal';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -62,6 +64,10 @@ const createWindow = () => {
   // Initialize Claude IPC handlers
   setupClaudeHandlers(mainWindow);
 
+  // Initialize terminal and file managers
+  terminalManager.setMainWindow(mainWindow);
+  fileManager.setMainWindow(mainWindow);
+
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -92,6 +98,10 @@ app.on('ready', () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  // Clean up terminal sessions and file watchers
+  terminalManager.cleanup();
+  fileManager.cleanup();
+
   if (process.platform !== 'darwin') {
     app.quit();
   }

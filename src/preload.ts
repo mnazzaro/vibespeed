@@ -170,6 +170,97 @@ const tasksAPI = {
   },
 };
 
+// Define Terminal API
+const terminalAPI = {
+  getHomeDir: async (): Promise<string> => {
+    return await ipcRenderer.invoke('terminal:getHomeDir');
+  },
+
+  create: async (cwd?: string): Promise<{ success: boolean; sessionId?: string; error?: string }> => {
+    return await ipcRenderer.invoke('terminal:create', cwd);
+  },
+
+  write: async (sessionId: string, data: string): Promise<void> => {
+    return await ipcRenderer.invoke('terminal:write', sessionId, data);
+  },
+
+  resize: async (sessionId: string, cols: number, rows: number): Promise<void> => {
+    return await ipcRenderer.invoke('terminal:resize', sessionId, cols, rows);
+  },
+
+  kill: async (sessionId: string): Promise<void> => {
+    return await ipcRenderer.invoke('terminal:kill', sessionId);
+  },
+
+  list: async (): Promise<string[]> => {
+    return await ipcRenderer.invoke('terminal:list');
+  },
+
+  onData: (callback: (sessionId: string, data: string) => void) => {
+    ipcRenderer.on('terminal:data', (event, sessionId, data) => callback(sessionId, data));
+  },
+
+  onExit: (callback: (sessionId: string, code: number) => void) => {
+    ipcRenderer.on('terminal:exit', (event, sessionId, code) => callback(sessionId, code));
+  },
+
+  removeListeners: () => {
+    ipcRenderer.removeAllListeners('terminal:data');
+    ipcRenderer.removeAllListeners('terminal:exit');
+  },
+};
+
+// Define Files API
+const filesAPI = {
+  readDirectory: async (path: string) => {
+    return await ipcRenderer.invoke('files:readDirectory', path);
+  },
+
+  readFile: async (path: string): Promise<string> => {
+    return await ipcRenderer.invoke('files:readFile', path);
+  },
+
+  writeFile: async (path: string, content: string): Promise<void> => {
+    return await ipcRenderer.invoke('files:writeFile', path, content);
+  },
+
+  createDirectory: async (path: string): Promise<void> => {
+    return await ipcRenderer.invoke('files:createDirectory', path);
+  },
+
+  delete: async (path: string): Promise<void> => {
+    return await ipcRenderer.invoke('files:delete', path);
+  },
+
+  rename: async (oldPath: string, newPath: string): Promise<void> => {
+    return await ipcRenderer.invoke('files:rename', oldPath, newPath);
+  },
+
+  getFileInfo: async (path: string) => {
+    return await ipcRenderer.invoke('files:getFileInfo', path);
+  },
+
+  watch: async (path: string): Promise<void> => {
+    return await ipcRenderer.invoke('files:watch', path);
+  },
+
+  unwatch: async (path: string): Promise<void> => {
+    return await ipcRenderer.invoke('files:unwatch', path);
+  },
+
+  openInEditor: async (path: string): Promise<void> => {
+    return await ipcRenderer.invoke('files:openInEditor', path);
+  },
+
+  onChanged: (callback: (path: string, event: 'add' | 'change' | 'unlink') => void) => {
+    ipcRenderer.on('files:changed', (event, path, changeEvent) => callback(path, changeEvent));
+  },
+
+  removeListeners: () => {
+    ipcRenderer.removeAllListeners('files:changed');
+  },
+};
+
 // Define Claude API
 const claudeAPI = {
   sendMessage: async (
@@ -210,6 +301,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   app: appAPI,
   tasks: tasksAPI,
   claude: claudeAPI,
+  terminal: terminalAPI,
+  files: filesAPI,
 });
 
 // Type definitions for TypeScript
@@ -218,6 +311,8 @@ export type ElectronAPI = {
   app: typeof appAPI;
   tasks: typeof tasksAPI;
   claude: typeof claudeAPI;
+  terminal: typeof terminalAPI;
+  files: typeof filesAPI;
 };
 
 declare global {

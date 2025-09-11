@@ -4,6 +4,7 @@ import { Sidebar } from '../components/Sidebar';
 
 import { InstallationSelector } from './components/Auth/InstallationSelector';
 import { RepositoryPicker } from './components/Auth/RepositoryPicker';
+import { PaneContainer } from './components/Panes/PaneContainer';
 import { TaskView } from './components/Tasks/TaskView';
 import { useAuthStore } from './store/auth';
 import { useTaskStore } from './store/tasks';
@@ -46,85 +47,92 @@ export const App: React.FC = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Main Content */}
-        <main className="bg-background flex-1 overflow-hidden">
-          {activeTask ? (
-            <TaskView task={activeTask} />
-          ) : (
-            <div className="h-full overflow-y-auto p-6">
-              {error && (
-                <div className="border-destructive/50 bg-destructive/10 mb-4 rounded-lg border p-4">
-                  <div className="flex items-center gap-2">
-                    <svg className="text-destructive h-4 w-4" width="16" height="16" viewBox="0 0 16 16">
-                      <path
-                        d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9-3.25a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM8 7a.75.75 0 01.75.75v3.5a.75.75 0 11-1.5 0v-3.5A.75.75 0 018 7z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    <span className="text-destructive text-sm">{error}</span>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Task/Chat Area */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <main className="bg-background flex-1 overflow-hidden">
+            {activeTask ? (
+              <TaskView task={activeTask} />
+            ) : (
+              <div className="h-full overflow-y-auto p-6">
+                {error && (
+                  <div className="border-destructive/50 bg-destructive/10 mb-4 rounded-lg border p-4">
+                    <div className="flex items-center gap-2">
+                      <svg className="text-destructive h-4 w-4" width="16" height="16" viewBox="0 0 16 16">
+                        <path
+                          d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9-3.25a1.25 1.25 0 11-2.5 0 1.25 1.25 0 012.5 0zM8 7a.75.75 0 01.75.75v3.5a.75.75 0 11-1.5 0v-3.5A.75.75 0 018 7z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <span className="text-destructive text-sm">{error}</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {isLoading ? (
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-center">
-                    <div className="border-primary mb-4 h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"></div>
-                    <p className="text-muted-foreground">Loading...</p>
+                {isLoading ? (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="text-center">
+                      <div className="border-primary mb-4 h-8 w-8 animate-spin rounded-full border-4 border-t-transparent"></div>
+                      <p className="text-muted-foreground">Loading...</p>
+                    </div>
                   </div>
-                </div>
-              ) : isAuthenticated ? (
-                <div className="mx-auto max-w-4xl space-y-6">
-                  <section className="bg-card rounded-lg border p-6">
-                    <h2 className="mb-2 text-xl font-semibold">GitHub App Installation</h2>
-                    <p className="text-muted-foreground mb-4 text-sm">
-                      Select a GitHub App installation to access repositories
-                    </p>
-                    <InstallationSelector />
-                  </section>
-
-                  {currentInstallation && (
+                ) : isAuthenticated ? (
+                  <div className="mx-auto max-w-4xl space-y-6">
                     <section className="bg-card rounded-lg border p-6">
-                      <h2 className="mb-2 text-xl font-semibold">Repositories</h2>
+                      <h2 className="mb-2 text-xl font-semibold">GitHub App Installation</h2>
                       <p className="text-muted-foreground mb-4 text-sm">
-                        Browse and select repositories from {currentInstallation.account.login}
+                        Select a GitHub App installation to access repositories
                       </p>
-                      <RepositoryPicker
-                        onSelect={(repo) => {
-                          console.log('Selected repository:', repo);
-                        }}
-                      />
+                      <InstallationSelector />
                     </section>
-                  )}
-                </div>
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-center">
-                    <svg
-                      className="text-muted-foreground mx-auto mb-4 h-16 w-16"
-                      width="64"
-                      height="64"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    <h2 className="mb-2 text-2xl font-semibold">Welcome to Vibespeed</h2>
-                    <p className="text-muted-foreground mb-4">Sign in with GitHub to access your repositories</p>
-                    <p className="text-muted-foreground text-sm">
-                      This app uses GitHub App installation flow to securely access your repositories with fine-grained
-                      permissions.
-                    </p>
+
+                    {currentInstallation && (
+                      <section className="bg-card rounded-lg border p-6">
+                        <h2 className="mb-2 text-xl font-semibold">Repositories</h2>
+                        <p className="text-muted-foreground mb-4 text-sm">
+                          Browse and select repositories from {currentInstallation.account.login}
+                        </p>
+                        <RepositoryPicker
+                          onSelect={(repo) => {
+                            console.log('Selected repository:', repo);
+                          }}
+                        />
+                      </section>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-        </main>
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <div className="text-center">
+                      <svg
+                        className="text-muted-foreground mx-auto mb-4 h-16 w-16"
+                        width="64"
+                        height="64"
+                        viewBox="0 0 16 16"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <h2 className="mb-2 text-2xl font-semibold">Welcome to Vibespeed</h2>
+                      <p className="text-muted-foreground mb-4">Sign in with GitHub to access your repositories</p>
+                      <p className="text-muted-foreground text-sm">
+                        This app uses GitHub App installation flow to securely access your repositories with
+                        fine-grained permissions.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+
+        {/* Panes Area - Right Column */}
+        <div className="w-96 overflow-hidden">
+          <PaneContainer />
+        </div>
       </div>
     </div>
   );
