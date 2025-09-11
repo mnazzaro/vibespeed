@@ -219,6 +219,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
   sendMessage: async (taskId: string, content: string) => {
     try {
+      // Just add the user message to the store - Claude integration happens in TaskChat
       const response = await window.electronAPI.tasks.sendMessage(taskId, {
         role: 'user',
         content,

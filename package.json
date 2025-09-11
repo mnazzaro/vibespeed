@@ -76,6 +76,7 @@
     "vite": "^5.0.12"
   },
   "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.111",
     "@octokit/auth-app": "^8.1.0",
     "@octokit/rest": "^22.0.0",
     "@radix-ui/react-avatar": "^1.1.10",
