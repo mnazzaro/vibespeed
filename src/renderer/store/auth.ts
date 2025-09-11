@@ -6,7 +6,6 @@ interface AuthStore extends AuthState {
   // Actions
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  selectInstallation: (installationId: number) => Promise<void>;
   refreshAuth: () => Promise<void>;
   loadRepositories: (installationId: number) => Promise<GitHubRepository[]>;
   setLoading: (loading: boolean) => void;
@@ -79,30 +78,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({
         isLoading: false,
         error: error.message || 'Logout failed',
-      });
-    }
-  },
-
-  selectInstallation: async (installationId: number) => {
-    set({ isLoading: true, error: null });
-
-    try {
-      const response = await window.electronAPI.auth.selectInstallation(installationId);
-
-      if (response.success) {
-        const installation = get().installations.find((i) => i.id === installationId);
-        set({
-          currentInstallation: installation || null,
-          token: response.data?.token || null,
-          isLoading: false,
-        });
-      } else {
-        throw new Error(response.error || 'Failed to select installation');
-      }
-    } catch (error) {
-      set({
-        isLoading: false,
-        error: error.message || 'Failed to select installation',
       });
     }
   },
