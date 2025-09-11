@@ -300,4 +300,255 @@ export function setupTaskHandlers(mainWindow: BrowserWindow): void {
       }
     }
   );
+
+  // Get git status for all repositories in a task
+  ipcMain.handle('task:getGitStatus', async (event, taskId: string): Promise<TaskIPCResponse<any>> => {
+    try {
+      const task = taskManager.getTask(taskId);
+
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      const statusByRepo: Record<string, any> = {};
+
+      for (const repo of task.repositories) {
+        if (repo.status === 'ready' && repo.worktreePath) {
+          const status = await gitManager.getWorktreeStatus(repo.worktreePath);
+          if (status) {
+            // Convert to serializable object, removing methods
+            statusByRepo[repo.name] = {
+              current: status.current,
+              tracking: status.tracking,
+              ahead: status.ahead,
+              behind: status.behind,
+              created: status.created || [],
+              deleted: status.deleted || [],
+              modified: status.modified || [],
+              renamed: status.renamed || [],
+              conflicted: status.conflicted || [],
+              staged: status.staged || [],
+              files: status.files || [],
+              not_added: status.not_added || [],
+              isClean: status.files?.length === 0,
+            };
+          }
+        }
+      }
+
+      return {
+        success: true,
+        data: statusByRepo,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Failed to get git status',
+      };
+    }
+  });
+
+  // Get git diff statistics for a repository
+  ipcMain.handle('task:getGitDiff', async (event, taskId: string, repoName: string): Promise<TaskIPCResponse<any>> => {
+    try {
+      const task = taskManager.getTask(taskId);
+
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      const repo = task.repositories.find((r) => r.name === repoName);
+      if (!repo || !repo.worktreePath) {
+        throw new Error('Repository not found or not ready');
+      }
+
+      const diffs = await gitManager.getDiffStats(repo.worktreePath);
+
+      return {
+        success: true,
+        data: diffs,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Failed to get git diff',
+      };
+    }
+  });
+
+  // Stage or unstage files
+  ipcMain.handle(
+    'task:stageFiles',
+    async (
+      event,
+      taskId: string,
+      repoName: string,
+      files: string[],
+      stage: boolean
+    ): Promise<TaskIPCResponse<void>> => {
+      try {
+        const task = taskManager.getTask(taskId);
+
+        if (!task) {
+          throw new Error('Task not found');
+        }
+
+        const repo = task.repositories.find((r) => r.name === repoName);
+        if (!repo || !repo.worktreePath) {
+          throw new Error('Repository not found or not ready');
+        }
+
+        if (stage) {
+          await gitManager.stageFiles(repo.worktreePath, files);
+        } else {
+          await gitManager.unstageFiles(repo.worktreePath, files);
+        }
+
+        return {
+          success: true,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message || 'Failed to stage/unstage files',
+        };
+      }
+    }
+  );
+
+  // Get file diff content
+  ipcMain.handle(
+    'task:getFileDiff',
+    async (event, taskId: string, repoName: string, filePath: string): Promise<TaskIPCResponse<string>> => {
+      try {
+        const task = taskManager.getTask(taskId);
+
+        if (!task) {
+          throw new Error('Task not found');
+        }
+
+        const repo = task.repositories.find((r) => r.name === repoName);
+        if (!repo || !repo.worktreePath) {
+          throw new Error('Repository not found or not ready');
+        }
+
+        const diff = await gitManager.getFileDiff(repo.worktreePath, filePath);
+
+        return {
+          success: true,
+          data: diff,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message || 'Failed to get file diff',
+        };
+      }
+    }
+  );
+
+  // Get file content with context (for expanding diff view)
+  ipcMain.handle(
+    'task:getFileContext',
+    async (
+      event,
+      taskId: string,
+      repoName: string,
+      filePath: string,
+      startLine: number,
+      endLine: number
+    ): Promise<TaskIPCResponse<string[]>> => {
+      try {
+        const task = taskManager.getTask(taskId);
+
+        if (!task) {
+          throw new Error('Task not found');
+        }
+
+        const repo = task.repositories.find((r) => r.name === repoName);
+        if (!repo || !repo.worktreePath) {
+          throw new Error('Repository not found or not ready');
+        }
+
+        const lines = await gitManager.getFileContext(repo.worktreePath, filePath, startLine, endLine);
+
+        return {
+          success: true,
+          data: lines,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message || 'Failed to get file context',
+        };
+      }
+    }
+  );
+
+  // Get full file diff with unified format
+  ipcMain.handle(
+    'task:getFullFileDiff',
+    async (
+      event,
+      taskId: string,
+      repoName: string,
+      filePath: string,
+      context: number = 3
+    ): Promise<TaskIPCResponse<string>> => {
+      try {
+        const task = taskManager.getTask(taskId);
+
+        if (!task) {
+          throw new Error('Task not found');
+        }
+
+        const repo = task.repositories.find((r) => r.name === repoName);
+        if (!repo || !repo.worktreePath) {
+          throw new Error('Repository not found or not ready');
+        }
+
+        const diff = await gitManager.getFullFileDiff(repo.worktreePath, filePath, context);
+
+        return {
+          success: true,
+          data: diff,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message || 'Failed to get full file diff',
+        };
+      }
+    }
+  );
+
+  // Commit changes
+  ipcMain.handle(
+    'task:commit',
+    async (event, taskId: string, repoName: string, message: string): Promise<TaskIPCResponse<void>> => {
+      try {
+        const task = taskManager.getTask(taskId);
+
+        if (!task) {
+          throw new Error('Task not found');
+        }
+
+        const repo = task.repositories.find((r) => r.name === repoName);
+        if (!repo || !repo.worktreePath) {
+          throw new Error('Repository not found or not ready');
+        }
+
+        await gitManager.commitChanges(repo.worktreePath, message);
+
+        return {
+          success: true,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error.message || 'Failed to commit changes',
+        };
+      }
+    }
+  );
 }

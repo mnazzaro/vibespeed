@@ -1,6 +1,7 @@
 export enum PaneType {
   FILE_EXPLORER = 'file-explorer',
   TERMINAL = 'terminal',
+  GIT_DIFF = 'git-diff',
   DEBUGGER = 'debugger',
   TESTS = 'tests',
   VERSION_CONTROL = 'version-control',

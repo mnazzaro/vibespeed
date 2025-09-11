@@ -57,11 +57,11 @@ const DEFAULT_LAYOUTS: SavedLayout[] = [
   {
     id: 'default-dev',
     name: 'Development',
-    description: 'Standard development layout with file explorer and terminal',
+    description: 'Standard development layout with git diff and terminal',
     panes: [
       {
-        id: 'file-explorer-1',
-        type: PaneType.FILE_EXPLORER,
+        id: 'git-diff-1',
+        type: PaneType.GIT_DIFF,
         position: 'top',
         size: 60,
         minSize: 20,
@@ -69,7 +69,7 @@ const DEFAULT_LAYOUTS: SavedLayout[] = [
         visible: true,
         resizable: true,
         collapsible: true,
-        title: 'Files',
+        title: 'Git Status',
       },
       {
         id: 'terminal-1',
