@@ -58,7 +58,7 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
 
   console.log('TOOL STATES', toolStates);
   // Subscribe to activeTask from store for real-time updates
-  const { activeTask, updateTask, addStreamingMessage, commitStreamingMessages, getMessagesForTask } = useTaskStore();
+  const { activeTask, updateTask, addMessage, updateSessionId } = useTaskStore();
 
   // Use activeTask from store if available, otherwise fall back to prop
   const task = activeTask || propTask;
@@ -82,6 +82,10 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
   useEffect(() => {
     const handleStreamEvent = (taskId: string, event: SDKMessage) => {
       if (taskId !== task.id) return;
+
+      // Add every message immediately to the store
+      addMessage(taskId, event);
+
       if (event.type === 'assistant') {
         console.log('ASSISTANT MESSAGE', event);
         for (const content of event.message.content) {
@@ -103,14 +107,11 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
         }
       }
 
-      // Add the streaming message to the store
-      addStreamingMessage(taskId, event);
-
       if (event.type === 'result') {
-        // Commit all streaming messages to persistent storage
-        // and update sessionId if present
-        commitStreamingMessages(taskId, event.session_id);
-
+        // Update sessionId if present
+        if (event.session_id) {
+          updateSessionId(taskId, event.session_id);
+        }
         setIsLoading(false);
       }
     };
@@ -120,7 +121,7 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     return () => {
       window.electronAPI.claude.removeClaudeListeners();
     };
-  }, [task.id, addStreamingMessage, commitStreamingMessages]);
+  }, [task.id, addMessage, updateSessionId]);
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -134,9 +135,9 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     setIsLoading(true);
 
     try {
-      // Add the user message to streaming messages in the store
+      // Add the user message to the store immediately
       console.log('Adding user message to store:', messageText);
-      addStreamingMessage(task.id, messageText);
+      addMessage(task.id, messageText);
 
       // Then send to Claude for processing
       console.log('Sending message to Claude:', messageText);
@@ -159,15 +160,14 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     }
   };
 
-  // Get all messages for this task (persisted + streaming)
-  const allMessages = getMessagesForTask(task.id);
-  console.log('ALL MESSAGES', allMessages);
+  // Messages are now directly from the task
+  console.log('TASK MESSAGES', task.messages);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-6">
-        {allMessages.length === 0 ? (
+        {task.messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <Bot className="text-muted-foreground mb-4 h-12 w-12" />
             <h3 className="mb-2 text-lg font-medium">Start a conversation</h3>
@@ -177,7 +177,7 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
           </div>
         ) : (
           <ToolUsageProvider.Provider value={{ toolStates, updateToolState }}>
-            <TaskMessageStream messages={allMessages} />
+            <TaskMessageStream messages={task.messages} />
           </ToolUsageProvider.Provider>
         )}
       </div>

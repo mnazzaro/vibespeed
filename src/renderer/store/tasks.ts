@@ -17,9 +17,6 @@ interface TaskStore {
     defaultBranch: string;
   }>;
   worktreeProgress: Record<string, WorktreeProgress>;
-  // Streaming messages for each task (temporary messages not yet persisted)
-  streamingMessages: Map<string, (SDKMessage | string)[]>;
-
   // Actions
   createTask: (params: CreateTaskParams) => Promise<Task>;
   loadTasks: () => Promise<void>;
@@ -27,11 +24,9 @@ interface TaskStore {
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
-  // Streaming message actions
-  addStreamingMessage: (taskId: string, message: SDKMessage | string) => void;
-  clearStreamingMessages: (taskId: string) => void;
-  commitStreamingMessages: (taskId: string, sessionId?: string) => void;
-  getMessagesForTask: (taskId: string) => (SDKMessage | string)[];
+  // Message actions
+  addMessage: (taskId: string, message: SDKMessage | string) => void;
+  updateSessionId: (taskId: string, sessionId: string) => void;
 
   // Task creation flow
   startTaskCreation: () => void;
@@ -66,7 +61,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   isCreatingTask: false,
   selectedReposForNewTask: [],
   worktreeProgress: {},
-  streamingMessages: new Map(),
   isLoading: false,
   error: null,
 
@@ -234,15 +228,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           const wasActive = state.activeTaskId === taskId;
           const newActiveTask = wasActive ? newTasks[0] : state.activeTask;
 
-          // Also clean up streaming messages for this task
-          const newStreamingMessages = new Map(state.streamingMessages);
-          newStreamingMessages.delete(taskId);
-
           return {
             tasks: newTasks,
             activeTaskId: newActiveTask?.id || null,
             activeTask: newActiveTask || null,
-            streamingMessages: newStreamingMessages,
           };
         });
       }
@@ -253,70 +242,57 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  // Streaming message actions
-  addStreamingMessage: (taskId: string, message: SDKMessage | string) => {
-    set((state) => {
-      const newMap = new Map(state.streamingMessages);
-      const currentMessages = newMap.get(taskId) || [];
-      newMap.set(taskId, [...currentMessages, message]);
-      return { streamingMessages: newMap };
-    });
-  },
-
-  clearStreamingMessages: (taskId: string) => {
-    set((state) => {
-      const newMap = new Map(state.streamingMessages);
-      newMap.delete(taskId);
-      return { streamingMessages: newMap };
-    });
-  },
-
-  commitStreamingMessages: (taskId: string, sessionId?: string) => {
-    const state = get();
-    const streamingMsgs = state.streamingMessages.get(taskId) || [];
-
-    if (streamingMsgs.length === 0 && !sessionId) return;
-
-    const task = state.tasks.find((t) => t.id === taskId);
+  // Message actions
+  addMessage: (taskId: string, message: SDKMessage | string) => {
+    const task = get().tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    // Combine existing messages with streaming messages and update sessionId
+    // Add the message to the task's messages array
     const updatedTask = {
       ...task,
-      messages: [...task.messages, ...streamingMsgs],
-      ...(sessionId ? { sessionId } : {}),
+      messages: [...task.messages, message],
     };
 
-    // Update the task with the committed messages locally
+    // Update local state immediately
     set((state) => ({
       tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
       activeTask: state.activeTaskId === taskId ? updatedTask : state.activeTask,
     }));
 
-    // Clear streaming messages for this task
-    get().clearStreamingMessages(taskId);
-
-    // Persist to backend asynchronously without awaiting
-    // This ensures the backend gets updated but doesn't overwrite our local state
+    // Persist to backend asynchronously (fire and forget)
     window.electronAPI.tasks
       .update(taskId, {
         messages: updatedTask.messages,
-        sessionId: updatedTask.sessionId,
       })
       .catch((error) => {
-        console.error('Failed to persist messages to backend:', error);
+        console.error('Failed to persist message to backend:', error);
       });
   },
 
-  getMessagesForTask: (taskId: string): (SDKMessage | string)[] => {
-    const state = get();
-    const task = state.tasks.find((t) => t.id === taskId);
-    const streamingMsgs = state.streamingMessages.get(taskId) || [];
+  updateSessionId: (taskId: string, sessionId: string) => {
+    const task = get().tasks.find((t) => t.id === taskId);
+    if (!task) return;
 
-    if (!task) return streamingMsgs;
+    // Update the session ID
+    const updatedTask = {
+      ...task,
+      sessionId,
+    };
 
-    // Return combined messages (persisted + streaming)
-    return [...task.messages, ...streamingMsgs];
+    // Update local state immediately
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+      activeTask: state.activeTaskId === taskId ? updatedTask : state.activeTask,
+    }));
+
+    // Persist to backend asynchronously (fire and forget)
+    window.electronAPI.tasks
+      .update(taskId, {
+        sessionId,
+      })
+      .catch((error) => {
+        console.error('Failed to persist sessionId to backend:', error);
+      });
   },
 
   // Task creation flow
