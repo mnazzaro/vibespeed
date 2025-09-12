@@ -1,3 +1,4 @@
+import { Options } from '@anthropic-ai/claude-code';
 import { Send, Loader2, XCircle, ClipboardCheck, Brain, Sparkles, Zap, ChevronDown } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
@@ -10,7 +11,7 @@ export type Model = 'opus' | 'sonnet';
 interface TaskInputProps {
   value: string;
   onChange: (value: string) => void;
-  onSend: (options: { message: string; thinkingLevel: ThinkingLevel; planMode: boolean; model: Model }) => void;
+  onSend: (options: Partial<Options>) => void;
   onCancel?: () => void;
   isLoading?: boolean;
   canCancel?: boolean;
@@ -31,6 +32,18 @@ interface DropdownProps {
   disabled?: boolean;
   className?: string;
 }
+
+const buildClaudeOptions = (planMode: boolean, thinkingLevel: ThinkingLevel, model: Model): Partial<Options> => {
+  return {
+    permissionMode: planMode ? 'plan' : 'bypassPermissions',
+    ...(thinkingLevel === 'default'
+      ? { maxTurns: 20, maxThinkingTokens: 25000 }
+      : thinkingLevel === 'superthink'
+        ? { maxTurns: 80, maxThinkingTokens: 50000 }
+        : { maxTurns: 100, maxThinkingTokens: 100000 }),
+    model: model === 'sonnet' ? 'claude-sonnet-4-20250514' : 'claude-opus-4-1-20250805',
+  };
+};
 
 const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, disabled, className }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -117,10 +130,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({
     if (!value.trim() || isLoading) return;
 
     onSend({
-      message: value.trim(),
-      thinkingLevel,
-      planMode,
-      model,
+      ...buildClaudeOptions(planMode, thinkingLevel, model),
     });
   };
 

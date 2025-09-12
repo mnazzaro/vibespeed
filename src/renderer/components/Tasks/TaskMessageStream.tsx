@@ -175,7 +175,6 @@ const AssistantMessageComponent: React.FC<{
   message: SDKAssistantMessage;
 }> = ({ message }) => {
   for (const content of message.message.content) {
-    console.log(content);
     if (content.type === 'text') {
       return <MarkdownContent content={content.text} />;
     } else if (content.type === 'tool_use') {

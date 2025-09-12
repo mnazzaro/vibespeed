@@ -1,4 +1,4 @@
-import { SDKMessage } from '@anthropic-ai/claude-code';
+import { Options, SDKMessage } from '@anthropic-ai/claude-code';
 import { Bot } from 'lucide-react';
 import React, { useState, useRef, useEffect, createContext } from 'react';
 
@@ -56,7 +56,6 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     });
   };
 
-  console.log('TOOL STATES', toolStates);
   // Subscribe to activeTask from store for real-time updates
   const { activeTask, updateTask, addMessage, updateSessionId } = useTaskStore();
 
@@ -83,11 +82,9 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     const handleStreamEvent = (taskId: string, event: SDKMessage) => {
       if (taskId !== task.id) return;
 
-      // Add every message immediately to the store
       addMessage(taskId, event);
 
       if (event.type === 'assistant') {
-        console.log('ASSISTANT MESSAGE', event);
         for (const content of event.message.content) {
           if (content.type === 'tool_use') {
             updateToolState(content.id, {
@@ -108,7 +105,6 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
       }
 
       if (event.type === 'result') {
-        // Update sessionId if present
         if (event.session_id) {
           updateSessionId(taskId, event.session_id);
         }
@@ -123,7 +119,7 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     };
   }, [task.id, addMessage, updateSessionId]);
 
-  const handleSend = async () => {
+  const handleSend = async (options: Partial<Options>) => {
     if (!message.trim() || isLoading) return;
 
     const messageText = message.trim();
@@ -135,16 +131,9 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     setIsLoading(true);
 
     try {
-      // Add the user message to the store immediately
-      console.log('Adding user message to store:', messageText);
       addMessage(task.id, messageText);
-
-      // Then send to Claude for processing
-      console.log('Sending message to Claude:', messageText);
-      const response = await window.electronAPI.claude.sendMessage(task.id, messageText); // TODO: Add options
-      console.log('Response from Claude:', response);
-    } catch (error) {
-      console.error('Failed to send message:', error); // TODO: Display to the user
+      await window.electronAPI.claude.sendMessage(task.id, messageText, options);
+    } catch {
       setIsLoading(false);
     }
   };
@@ -159,9 +148,6 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
       }
     }
   };
-
-  // Messages are now directly from the task
-  console.log('TASK MESSAGES', task.messages);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">

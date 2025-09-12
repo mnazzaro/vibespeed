@@ -4,9 +4,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { AuthResponse, GitHubInstallation, GitHubRepository, AuthToken, UserProfile } from './shared/types/auth';
-import type { ClaudeQueryOptions, ClaudeIPCResponse, ClaudeServiceStatus } from './shared/types/claude';
+import type { ClaudeIPCResponse, ClaudeServiceStatus } from './shared/types/claude';
 import type { Task, CreateTaskParams, TaskIPCResponse, WorktreeProgress } from './shared/types/tasks';
-import { SDKMessage } from '@anthropic-ai/claude-code';
+import { Options, SDKMessage } from '@anthropic-ai/claude-code';
 
 // Define the API that will be exposed to the renderer
 const authAPI = {
@@ -303,7 +303,7 @@ const claudeAPI = {
   sendMessage: async (
     taskId: string,
     message: string,
-    options?: Partial<ClaudeQueryOptions>
+    options?: Partial<Options>
   ): Promise<ClaudeIPCResponse<{ messageId: string }>> => {
     return await ipcRenderer.invoke('claude:sendMessage', taskId, message, options);
   },

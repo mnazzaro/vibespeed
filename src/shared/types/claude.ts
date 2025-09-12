@@ -8,18 +8,6 @@ export interface ToolUsageInfo {
   icon?: string;
 }
 
-export interface ClaudeQueryOptions {
-  taskId: string;
-  workingDirectory: string;
-  maxTurns?: number;
-  allowedTools?: string[];
-  appendSystemPrompt?: string;
-  includePartialMessages?: boolean;
-  maxTokens?: number;
-  temperature?: number;
-  model?: 'claude-opus-4-1-20250805' | 'claude-sonnet-4-20250514';
-}
-
 export interface ClaudeIPCResponse<T = any> {
   success: boolean;
   data?: T;

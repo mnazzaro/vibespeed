@@ -1,10 +1,10 @@
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 
-import { query, type SDKMessage } from '@anthropic-ai/claude-code';
+import { Options, query, type SDKMessage } from '@anthropic-ai/claude-code';
 import { BrowserWindow } from 'electron';
 
-import { ClaudeQueryOptions, ClaudeServiceStatus } from '../../shared/types/claude';
+import { ClaudeServiceStatus } from '../../shared/types/claude';
 import { Task } from '../../shared/types/tasks';
 
 import { TaskManager } from './taskManager';
@@ -68,7 +68,7 @@ export class ClaudeService {
   public async sendMessage(
     taskId: string,
     userMessage: string,
-    options?: Partial<ClaudeQueryOptions>
+    options?: Partial<Options>
   ): Promise<{ sessionId?: string }> {
     const task = this.taskManager.getTask(taskId);
     if (!task) {
@@ -87,13 +87,13 @@ export class ClaudeService {
     taskId: string,
     prompt: string,
     task: Task,
-    options: Partial<ClaudeQueryOptions> = {},
+    options: Partial<Options> = {},
     signal: AbortSignal
   ): Promise<void> {
     try {
       const sessionId = task.sessionId;
 
-      const queryOptions: any = {
+      const queryOptions: Options = {
         maxTurns: options.maxTurns || 100,
         includePartialMessages: true,
         allowedTools: options.allowedTools || [
@@ -117,6 +117,9 @@ export class ClaudeService {
           options.appendSystemPrompt ||
           `You are working in the directory: ${task.worktreeBasePath}. All file operations should be relative to this directory.`,
         cwd: task.worktreeBasePath,
+        permissionMode: options.permissionMode,
+        model: options.model,
+        maxThinkingTokens: options.maxThinkingTokens,
       };
 
       if (sessionId) {
