@@ -62,6 +62,46 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
   // Use activeTask from store if available, otherwise fall back to prop
   const task = activeTask || propTask;
 
+  // Initialize tool states from existing messages on mount or when task changes
+  useEffect(() => {
+    const newToolStates = new Map<string, ToolState>();
+
+    // Iterate through all messages to rebuild tool states
+    for (const msg of task.messages) {
+      if (typeof msg === 'string') continue;
+
+      if (msg.type === 'assistant') {
+        const assistantMsg = msg as any; // Type assertion for simplicity
+        if (assistantMsg.message?.content) {
+          for (const content of assistantMsg.message.content) {
+            if (content.type === 'tool_use') {
+              newToolStates.set(content.id, {
+                name: content.name,
+                input: content.input,
+                expanded: false,
+                content: undefined,
+              });
+            }
+          }
+        }
+      } else if (msg.type === 'user') {
+        const userMsg = msg as any;
+        if (userMsg.message?.content) {
+          for (const content of userMsg.message.content) {
+            if (content.type === 'tool_result') {
+              const existingState = newToolStates.get(content.tool_use_id);
+              if (existingState) {
+                existingState.content = content.content;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    setToolStates(newToolStates);
+  }, [task.id, task.messages.length]); // Re-run when task changes or messages are added
+
   // Listen for task updates from main process
   useEffect(() => {
     const handleTaskUpdated = (taskId: string, updatedTask: Task) => {
