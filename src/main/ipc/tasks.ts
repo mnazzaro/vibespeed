@@ -1,6 +1,7 @@
+import { SDKMessage } from '@anthropic-ai/claude-code';
 import { ipcMain, BrowserWindow } from 'electron';
 
-import { CreateTaskParams, TaskIPCResponse, Task, ChatMessage, WorktreeProgress } from '../../shared/types/tasks';
+import { CreateTaskParams, TaskIPCResponse, Task, WorktreeProgress } from '../../shared/types/tasks';
 import { GitManager } from '../services/gitManager';
 import { TaskManager } from '../services/taskManager';
 
@@ -216,11 +217,7 @@ export function setupTaskHandlers(mainWindow: BrowserWindow): void {
   // Send message to task
   ipcMain.handle(
     'task:sendMessage',
-    async (
-      event,
-      taskId: string,
-      message: Omit<ChatMessage, 'id' | 'timestamp'>
-    ): Promise<TaskIPCResponse<ChatMessage>> => {
+    async (event, taskId: string, message: SDKMessage): Promise<TaskIPCResponse<SDKMessage>> => {
       try {
         const newMessage = taskManager.addMessage(taskId, message);
 

@@ -1,6 +1,7 @@
+import { Options } from '@anthropic-ai/claude-code';
 import { ipcMain, BrowserWindow } from 'electron';
 
-import { ClaudeQueryOptions, ClaudeIPCResponse, ClaudeServiceStatus } from '../../shared/types/claude';
+import { ClaudeIPCResponse, ClaudeServiceStatus } from '../../shared/types/claude';
 import { ClaudeService } from '../services/claudeService';
 
 let handlersRegistered = false;
@@ -24,8 +25,8 @@ export function setupClaudeHandlers(mainWindow: BrowserWindow): void {
       event,
       taskId: string,
       message: string,
-      options?: Partial<ClaudeQueryOptions>
-    ): Promise<ClaudeIPCResponse<{ messageId: string }>> => {
+      options?: Partial<Options>
+    ): Promise<ClaudeIPCResponse<{ sessionId?: string }>> => {
       try {
         const result = await claudeService.sendMessage(taskId, message, options);
         return {

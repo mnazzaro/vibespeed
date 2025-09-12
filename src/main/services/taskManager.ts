@@ -1,11 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { SDKMessage } from '@anthropic-ai/claude-code';
 import { app } from 'electron';
 import ElectronStore from 'electron-store';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Task, TaskRepository, CreateTaskParams, TaskStoreData, ChatMessage } from '../../shared/types/tasks';
+import { Task, TaskRepository, CreateTaskParams, TaskStoreData } from '../../shared/types/tasks';
 
 // Type augmentation for ElectronStore to include the methods from Conf
 interface StoreInterface<T> {
@@ -162,20 +163,14 @@ export class TaskManager {
     this.updateTask(taskId, { repositories });
   }
 
-  public addMessage(taskId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>): ChatMessage | null {
+  public addMessage(taskId: string, message: SDKMessage): SDKMessage | null {
     const task = this.getTask(taskId);
     if (!task) return null;
 
-    const newMessage: ChatMessage = {
-      ...message,
-      id: uuidv4(),
-      timestamp: new Date(),
-    };
-
-    const messages = [...task.messages, newMessage];
+    const messages = [...task.messages, message];
     this.updateTask(taskId, { messages });
 
-    return newMessage;
+    return message;
   }
 
   public deleteTask(taskId: string): boolean {

@@ -1,3 +1,5 @@
+import { SDKMessage } from '@anthropic-ai/claude-code';
+
 export interface Task {
   id: string;
   name: string;
@@ -6,7 +8,7 @@ export interface Task {
   status: 'active' | 'completed' | 'archived';
   createdAt: Date;
   updatedAt: Date;
-  messages: ChatMessage[];
+  messages: (SDKMessage | string)[];
   sessionId?: string; // Claude conversation session ID for maintaining context
 }
 
@@ -20,15 +22,6 @@ export interface TaskRepository {
   worktreePath: string;
   status: 'initializing' | 'ready' | 'error';
   errorMessage?: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system' | 'thinking';
-  content: string;
-  timestamp: Date;
-  metadata?: Record<string, any>;
-  thinkingBlocks?: string[]; // Store thinking blocks separately
 }
 
 export interface CreateTaskParams {

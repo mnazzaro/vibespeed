@@ -21,7 +21,6 @@ export const TaskView: React.FC<TaskViewProps> = ({ task: propTask }) => {
   // Listen for worktree progress updates
   useEffect(() => {
     const handleProgress = (progress: WorktreeProgress) => {
-      console.log('TaskView received worktree progress:', progress);
       updateWorktreeProgress(progress);
     };
 
@@ -52,16 +51,6 @@ export const TaskView: React.FC<TaskViewProps> = ({ task: propTask }) => {
 
   // Check if any repos are still initializing
   const isInitializing = task.repositories.some((r) => r.status === 'initializing');
-
-  console.log(
-    'TaskView render - Task:',
-    task.id,
-    'Repos:',
-    task.repositories.map((r) => ({
-      name: r.name,
-      status: r.status,
-    }))
-  );
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
