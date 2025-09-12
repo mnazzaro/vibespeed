@@ -1,8 +1,7 @@
-import { GitBranch, Folder, Code, AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { Folder, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { useTaskStore } from '@/renderer/store/tasks';
 import { Task, TaskRepository } from '@/shared/types/tasks';
 
@@ -22,40 +21,10 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ task }) => {
     setEditingName(false);
   };
 
-  const getRepoStatusIcon = (status: TaskRepository['status']) => {
-    switch (status) {
-      case 'initializing':
-        return <Loader2 className="h-2.5 w-2.5 animate-spin" />;
-      case 'ready':
-        return <Code className="h-2.5 w-2.5 text-green-600" />;
-      case 'error':
-        return <AlertCircle className="h-2.5 w-2.5 text-red-600" />;
-      default:
-        return <GitBranch className="h-2.5 w-2.5" />;
-    }
-  };
-
-  const getRepoStatusColor = (status: TaskRepository['status']) => {
-    switch (status) {
-      case 'ready':
-        return 'border-green-600/50 bg-green-600/10';
-      case 'error':
-        return 'border-red-600/50 bg-red-600/10';
-      case 'initializing':
-        return 'border-primary/50 bg-primary/10';
-      default:
-        return 'border-border';
-    }
-  };
-
   const handleOpenInEditor = async (repo: TaskRepository) => {
     if (repo.status === 'ready') {
       await window.electronAPI.tasks.openInEditor(task.id, repo.name);
     }
-  };
-
-  const handleOpenInExplorer = async () => {
-    await window.electronAPI.tasks.openInExplorer(task.id);
   };
 
   const handleDelete = async () => {
@@ -65,7 +34,7 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ task }) => {
   };
 
   return (
-    <header className="bg-card flex items-start gap-3 px-6 py-3">
+    <header className="bg-card flex h-14 items-center gap-3 border-b px-6">
       <div className="flex flex-1 flex-col gap-1">
         {editingName ? (
           <input
@@ -85,41 +54,23 @@ export const TaskHeader: React.FC<TaskHeaderProps> = ({ task }) => {
           />
         ) : (
           <>
-            <h2
-              className="hover:text-primary cursor-pointer text-base font-semibold"
-              onClick={() => setEditingName(true)}
-            >
+            <h2 className="hover:text-primary cursor-pointer" onClick={() => setEditingName(true)}>
               {task.name}
             </h2>
           </>
         )}
-
-        {/* Repository pills */}
-        <div className="mt-1 flex gap-1.5">
-          {task.repositories.map((repo) => (
-            <button
-              key={repo.id}
-              onClick={() => handleOpenInEditor(repo)}
-              disabled={repo.status !== 'ready'}
-              className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] transition-colors',
-                getRepoStatusColor(repo.status),
-                repo.status === 'ready' && 'hover:bg-accent cursor-pointer'
-              )}
-              title={repo.status === 'ready' ? 'Open in VS Code' : repo.errorMessage || repo.status}
-            >
-              {getRepoStatusIcon(repo.status)}
-              <span className="font-medium">{repo.name}</span>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Actions */}
-      <Button variant="ghost" size="sm" onClick={handleOpenInExplorer}>
-        <Folder className="mr-2 h-4 w-4" />
-        Open Folder
-      </Button>
+      {task.repositories.length > 0 &&
+        task.repositories.map((repo) => (
+          <>
+            <Button variant="ghost" size="sm" onClick={() => handleOpenInEditor(repo)}>
+              <Folder className="mr-2 h-4 w-4" />
+              Open {repo.name}
+            </Button>
+          </>
+        ))}
 
       <Button
         variant="ghost"

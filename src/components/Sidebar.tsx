@@ -1,4 +1,3 @@
-import { User, LogOut, ChevronUp } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { InstallationList } from '@/components/InstallationList';
@@ -16,10 +15,10 @@ export const Sidebar: React.FC = () => {
   const [isInstallationsExpanded, setIsInstallationsExpanded] = useState(false);
 
   return (
-    <div className="bg-muted/10 flex h-full w-64 flex-col border-r">
+    <div className="bg-card/30 shadow-paper flex h-full w-64 flex-col border-r">
       {/* Header */}
-      <div className="flex h-14 items-center border-b px-4">
-        <h1 className="text-lg font-semibold">Vibespeed</h1>
+      <div className="bg-card flex h-14 items-center border-b px-4">
+        <h1 className="font-serif text-lg">Vibespeed</h1>
       </div>
 
       {/* Main Content Area - Tasks */}
@@ -53,10 +52,8 @@ export const Sidebar: React.FC = () => {
             onClick={() => setIsInstallationsExpanded(!isInstallationsExpanded)}
             className="hover:bg-muted/20 flex w-full items-center justify-between px-4 py-3 transition-colors"
           >
-            <h2 className="text-muted-foreground text-xs font-semibold uppercase">GitHub Installations</h2>
-            <ChevronUp
-              className={cn('h-4 w-4 transition-transform duration-200', !isInstallationsExpanded && 'rotate-180')}
-            />
+            <h2 className="text-muted-foreground font-mono text-xs">GitHub Installations</h2>
+            <span className="text-muted-foreground text-xs">{isInstallationsExpanded ? '▴' : '▾'}</span>
           </button>
           <div
             className={cn(
@@ -72,23 +69,22 @@ export const Sidebar: React.FC = () => {
       )}
 
       {/* Profile Section at Bottom */}
-      <div className="border-t p-4">
+      <div className="h-30 border-t p-4">
         {isAuthenticated && user ? (
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <Avatar>
                 <AvatarImage src={user.avatar_url} alt={user.login} />
                 <AvatarFallback>
-                  <User className="h-4 w-4" />
+                  <span className="font-mono text-xs">{user.login?.charAt(0).toUpperCase()}</span>
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden">
-                <p className="truncate text-sm font-medium">{user.name || user.login}</p>
-                <p className="text-muted-foreground truncate text-xs">@{user.login}</p>
+                <p className="truncate font-serif text-sm">{user.name || user.login}</p>
+                <p className="text-muted-foreground truncate font-mono text-xs">@{user.login}</p>
               </div>
             </div>
             <Button onClick={() => logout()} variant="outline" size="sm" className="w-full">
-              <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </Button>
           </div>
@@ -96,11 +92,11 @@ export const Sidebar: React.FC = () => {
           <div className="flex items-center space-x-3">
             <Avatar>
               <AvatarFallback>
-                <User className="h-4 w-4" />
+                <span className="font-mono text-xs">?</span>
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="text-muted-foreground text-sm">Not signed in</p>
+              <p className="text-muted-foreground font-serif text-sm">Not signed in</p>
             </div>
           </div>
         )}

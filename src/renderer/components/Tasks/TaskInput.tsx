@@ -1,8 +1,6 @@
 import { Options } from '@anthropic-ai/claude-code';
-import { Send, Loader2, XCircle, ClipboardCheck, Brain, Sparkles, Zap, ChevronDown } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export type ThinkingLevel = 'default' | 'superthink' | 'gigathink';
@@ -17,12 +15,6 @@ interface TaskInputProps {
   canCancel?: boolean;
   disabled?: boolean;
 }
-
-const thinkingIcons = {
-  default: <Brain className="h-3.5 w-3.5" />,
-  superthink: <Sparkles className="h-3.5 w-3.5" />,
-  gigathink: <Zap className="h-3.5 w-3.5" />,
-};
 
 // Simple dropdown component
 interface DropdownProps {
@@ -69,18 +61,18 @@ const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, disabled,
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={cn(
-          'flex items-center justify-between gap-1 rounded-md border px-2 py-1 text-xs',
-          'bg-background hover:bg-accent hover:text-accent-foreground',
-          'focus:ring-ring focus:ring-2 focus:ring-offset-2 focus:outline-none',
+          'flex items-center justify-between gap-1 border-b px-2 py-1 font-mono text-xs',
+          'hover:bg-accent/20 bg-transparent transition-colors',
+          'focus:outline-none',
           disabled && 'cursor-not-allowed opacity-50',
           className
         )}
       >
         <span className="flex items-center gap-1">{selectedOption?.label}</span>
-        <ChevronDown className="h-3 w-3" />
+        <span className="text-muted-foreground">▾</span>
       </button>
       {isOpen && (
-        <div className="bg-popover absolute bottom-full left-0 z-50 mb-1 min-w-[100px] rounded-md border p-1 shadow-md">
+        <div className="bg-popover shadow-paper absolute bottom-full left-0 z-50 mb-1 min-w-[100px] border p-1">
           {options.map((option) => (
             <button
               key={option.value}
@@ -90,8 +82,8 @@ const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, disabled,
                 setIsOpen(false);
               }}
               className={cn(
-                'flex w-full items-center gap-2 rounded px-2 py-1 text-xs',
-                'hover:bg-accent hover:text-accent-foreground',
+                'flex w-full items-center gap-2 px-2 py-1 font-mono text-xs',
+                'hover:bg-accent/30 transition-colors',
                 value === option.value && 'bg-accent'
               )}
             >
@@ -117,7 +109,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({
   const [planMode, setPlanMode] = useState(false);
   const [model, setModel] = useState<Model>('sonnet');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const placeholder = planMode ? 'Ask Claude anything...' : 'Ask Claude to make a plan...';
+  const placeholder = planMode ? 'Ask Claude to make a plan...' : 'Ask Claude anything...';
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -152,20 +144,12 @@ export const TaskInput: React.FC<TaskInputProps> = ({
     <div className="relative">
       {/* Plan mode indicator in the border */}
       {planMode && (
-        <div className="bg-background absolute -top-2 right-4 z-10 px-1">
-          <div className="flex items-center gap-1">
-            <ClipboardCheck className="h-3.5 w-3.5 text-blue-600" />
-            <span className="text-xs font-medium text-blue-600">Plan Mode</span>
-          </div>
+        <div className="bg-background absolute -top-2 right-4 z-10 px-2">
+          <span className="text-primary/70 font-mono text-xs">Planning</span>
         </div>
       )}
 
-      <div
-        className={cn(
-          'bg-background rounded-xl border transition-colors duration-150',
-          planMode && 'border-blue-500 shadow-sm shadow-blue-100'
-        )}
-      >
+      <div className={cn('bg-card/50 h-30 border-t transition-all duration-200', planMode && 'border-t-primary/30')}>
         {/* Textarea at the top */}
         <div className="p-3 pb-2">
           <textarea
@@ -175,9 +159,9 @@ export const TaskInput: React.FC<TaskInputProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className={cn(
-              'w-full resize-none bg-transparent text-sm',
+              'w-full resize-none bg-transparent',
               'placeholder:text-muted-foreground focus:outline-none',
-              'min-h-[44px]'
+              'min-h-[40px] font-serif'
             )}
             rows={1}
             disabled={disabled || isLoading}
@@ -195,33 +179,18 @@ export const TaskInput: React.FC<TaskInputProps> = ({
               options={[
                 {
                   value: 'default',
-                  label: (
-                    <>
-                      {thinkingIcons.default}
-                      <span>Default</span>
-                    </>
-                  ),
+                  label: 'Default',
                 },
                 {
                   value: 'superthink',
-                  label: (
-                    <>
-                      {thinkingIcons.superthink}
-                      <span>Superthink</span>
-                    </>
-                  ),
+                  label: 'Super',
                 },
                 {
                   value: 'gigathink',
-                  label: (
-                    <>
-                      {thinkingIcons.gigathink}
-                      <span>Gigathink</span>
-                    </>
-                  ),
+                  label: 'Giga',
                 },
               ]}
-              className="h-7 w-[110px]"
+              className="h-7 w-[80px]"
             />
 
             {/* Model Selector */}
@@ -233,38 +202,43 @@ export const TaskInput: React.FC<TaskInputProps> = ({
                 { value: 'sonnet', label: 'Sonnet' },
                 { value: 'opus', label: 'Opus' },
               ]}
-              className="h-7 w-[90px]"
+              className="h-7 w-[70px]"
             />
 
             {/* Plan Mode Toggle */}
-            <Button
-              variant={planMode ? 'secondary' : 'ghost'}
-              size="sm"
-              className={cn('h-7 px-2 text-xs', planMode && 'bg-blue-50 text-blue-700 hover:bg-blue-100')}
+            <button
+              className={cn(
+                'h-7 border-b px-2 font-mono text-xs transition-colors',
+                planMode ? 'bg-accent/30 border-primary/30' : 'hover:bg-accent/20'
+              )}
               onClick={() => setPlanMode(!planMode)}
               disabled={isLoading}
             >
-              <ClipboardCheck className="mr-1 h-3.5 w-3.5" />
               Plan
-            </Button>
+            </button>
           </div>
 
           {/* Send/Cancel buttons */}
           <div className="flex items-center gap-1">
             {isLoading && canCancel && onCancel && (
-              <Button onClick={onCancel} size="icon" variant="ghost" className="h-7 w-7">
-                <XCircle className="h-4 w-4" />
-              </Button>
+              <button
+                onClick={onCancel}
+                className="hover:bg-accent/20 h-7 border-b px-3 font-mono text-xs transition-colors"
+              >
+                Cancel
+              </button>
             )}
-            <Button
+            <button
               onClick={handleSend}
               disabled={!value.trim() || isLoading}
-              size="icon"
-              variant="default"
-              className="h-7 w-7"
+              className={cn(
+                'h-7 border-b px-3 font-mono text-xs transition-colors',
+                'hover:bg-accent/30',
+                (!value.trim() || isLoading) && 'cursor-not-allowed opacity-50'
+              )}
             >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
+              {isLoading ? '...' : 'Send'}
+            </button>
           </div>
         </div>
       </div>

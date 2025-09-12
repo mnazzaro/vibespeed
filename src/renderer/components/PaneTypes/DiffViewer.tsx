@@ -472,7 +472,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({ taskId, repoName, filePath, all
           <div className="flex items-center gap-2">
             <GitBranch className="h-5 w-5" />
             <div>
-              <h2 className="text-lg font-semibold">{repoName}</h2>
+              <h2 className="font-mono text-lg font-semibold">{repoName}</h2>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -507,17 +507,19 @@ const DiffViewer: React.FC<DiffViewerProps> = ({ taskId, repoName, filePath, all
                         <div className="truncate font-mono text-sm" title={diff.path}>
                           {fileName}
                         </div>
-                        <div className="text-muted-foreground truncate text-xs" title={diff.path}>
+                        <div className="text-muted-foreground truncate font-mono text-xs" title={diff.path}>
                           {diff.path}
                         </div>
                       </div>
 
                       <div className="flex flex-shrink-0 items-center gap-2">
                         {diff.additions > 0 && (
-                          <span className="text-xs text-green-800 dark:text-green-500">+{diff.additions}</span>
+                          <span className="font-mono text-xs text-green-800 dark:text-green-500">
+                            +{diff.additions}
+                          </span>
                         )}
                         {diff.deletions > 0 && (
-                          <span className="text-xs text-red-800 dark:text-red-500">-{diff.deletions}</span>
+                          <span className="font-mono text-xs text-red-800 dark:text-red-500">-{diff.deletions}</span>
                         )}
                       </div>
                     </button>

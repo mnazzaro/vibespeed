@@ -122,7 +122,23 @@ export const TaskMessageStream: React.FC<TaskMessageStreamProps> = ({ messages }
     // Route to the appropriate component based on message type
 
     if (typeof message === 'string') {
-      return <MarkdownContent content={'# USER MESSAGE:\n' + message} />;
+      return (
+        <div className="relative my-6">
+          {/* Horizontal line above */}
+          <div className="absolute -top-3 left-0 h-px w-6 bg-gray-400 dark:bg-gray-600"></div>
+
+          {/* Main content */}
+          <div className="pl-4">
+            <MarkdownContent content={'# User Message:\n' + message} />
+          </div>
+
+          {/* L-shaped border below */}
+          <div className="absolute -bottom-3 left-0">
+            <div className="h-3 w-px bg-gray-400 dark:bg-gray-600"></div>
+            <div className="h-px w-6 bg-gray-400 dark:bg-gray-600"></div>
+          </div>
+        </div>
+      );
     }
 
     switch (message.type) {

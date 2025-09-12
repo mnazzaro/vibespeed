@@ -1,4 +1,4 @@
-import { GitBranch, Check, AlertCircle } from 'lucide-react';
+import { GitBranch, AlertCircle } from 'lucide-react';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -243,7 +243,6 @@ const GitDiffPane: React.FC<GitDiffPaneProps> = () => {
     return (
       <div className="bg-background flex h-full items-center justify-center">
         <div className="text-center">
-          <div className="border-primary mb-2 h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           <p className="text-muted-foreground text-sm">Loading git status...</p>
         </div>
       </div>
@@ -280,14 +279,18 @@ const GitDiffPane: React.FC<GitDiffPaneProps> = () => {
               <button className="bg-muted/20 hover:bg-muted/30 flex w-full items-center justify-between px-3 py-2 transition-colors">
                 <div className="flex items-center gap-2">
                   <GitBranch className="h-4 w-4" />
-                  <span className="text-sm font-medium">{repoName}</span>
+                  <span className="font-mono text-sm font-medium">{repoName}</span>
                 </div>
 
                 {hasChanges && (
                   <div className="flex items-center gap-1.5">
-                    {totals.additions > 0 && <span className="text-xs text-green-600">+{totals.additions}</span>}
-                    {totals.deletions > 0 && <span className="text-xs text-red-600">-{totals.deletions}</span>}
-                    <span className="border-muted-foreground/30 text-muted-foreground ml-1 rounded border px-2 py-0.5 text-xs">
+                    {totals.additions > 0 && (
+                      <span className="font-mono text-xs text-green-600">+{totals.additions}</span>
+                    )}
+                    {totals.deletions > 0 && (
+                      <span className="font-mono text-xs text-red-600">-{totals.deletions}</span>
+                    )}
+                    <span className="border-muted-foreground/30 text-muted-foreground ml-1 rounded border px-2 py-0.5 font-mono text-xs">
                       {totals.filesChanged} {totals.filesChanged === 1 ? 'file' : 'files'}
                     </span>
                   </div>
@@ -322,7 +325,7 @@ const GitDiffPane: React.FC<GitDiffPaneProps> = () => {
                           <div className="truncate font-mono text-sm" title={file.path}>
                             {file.path.split('/').pop() || file.path}
                           </div>
-                          <div className="text-muted-foreground truncate text-xs" title={file.path}>
+                          <div className="text-muted-foreground truncate font-mono text-xs" title={file.path}>
                             {file.path}
                           </div>
                         </div>
@@ -331,24 +334,20 @@ const GitDiffPane: React.FC<GitDiffPaneProps> = () => {
                         <div className="flex flex-shrink-0 items-center gap-2">
                           {diff && !diff.binary && (
                             <div className="flex items-center gap-1">
-                              {diff.additions > 0 && <span className="text-xs text-green-600">+{diff.additions}</span>}
-                              {diff.deletions > 0 && <span className="text-xs text-red-600">-{diff.deletions}</span>}
+                              {diff.additions > 0 && (
+                                <span className="font-mono text-xs text-green-600">+{diff.additions}</span>
+                              )}
+                              {diff.deletions > 0 && (
+                                <span className="font-mono text-xs text-red-600">-{diff.deletions}</span>
+                              )}
                             </div>
                           )}
 
-                          {diff?.binary && <span className="text-muted-foreground text-xs">Binary</span>}
+                          {diff?.binary && <span className="text-muted-foreground font-mono text-xs">Binary</span>}
                         </div>
                       </button>
                     );
                   })}
-                </div>
-              )}
-
-              {/* Clean repository message */}
-              {!hasChanges && (
-                <div className="text-muted-foreground px-3 py-3 text-center text-sm">
-                  <Check className="mx-auto mb-1 h-5 w-5 text-green-500" />
-                  Working tree clean
                 </div>
               )}
             </div>
