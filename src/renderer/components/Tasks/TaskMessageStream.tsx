@@ -1,9 +1,4 @@
-import {
-  SDKAssistantMessage,
-  SDKMessage,
-  SDKResultMessage,
-  SDKSystemMessage,
-} from '@anthropic-ai/claude-code';
+import { SDKAssistantMessage, SDKMessage, SDKSystemMessage } from '@anthropic-ai/claude-code';
 import {
   Bot,
   FileEdit,
@@ -191,14 +186,6 @@ const AssistantMessageComponent: React.FC<{
   }
 };
 
-// Component for Result Messages
-const ResultMessageComponent: React.FC<{ message: SDKResultMessage }> = ({ message }) => {
-  return (
-    // @ts-ignore
-    <MarkdownContent content={message.result} />
-  );
-};
-
 // Main TaskMessageStream Component
 export const TaskMessageStream: React.FC<TaskMessageStreamProps> = ({ messages }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -218,7 +205,8 @@ export const TaskMessageStream: React.FC<TaskMessageStreamProps> = ({ messages }
         return <SystemMessageComponent message={message as SDKSystemMessage} />;
 
       case 'result':
-        return <ResultMessageComponent message={message as SDKResultMessage} />;
+        // We get the message as an assistant message first, so this causes a duplicate if we render it
+        return null;
 
       // Skip certain message types
       case 'user':
