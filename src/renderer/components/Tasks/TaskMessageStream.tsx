@@ -29,54 +29,54 @@ interface TaskMessageStreamProps {
 // Component for rendering markdown content
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
   return (
-    <div className="prose dark:prose-invert max-w-none my-2">
+    <div className="prose dark:prose-invert my-2 max-w-none">
       <ReactMarkdown
         components={{
           // Enhanced header components with proper sizing
           h1: ({ children, ...props }) => (
-            <h1 className="text-3xl font-semibold mb-4 first:mt-0 mt-6 text-foreground" {...props}>
+            <h1 className="text-foreground mt-6 mb-4 text-3xl font-semibold first:mt-0" {...props}>
               {children}
             </h1>
           ),
           h2: ({ children, ...props }) => (
-            <h2 className="text-2xl font-semibold mb-3 first:mt-0 mt-5 text-foreground" {...props}>
+            <h2 className="text-foreground mt-5 mb-3 text-2xl font-semibold first:mt-0" {...props}>
               {children}
             </h2>
           ),
           h3: ({ children, ...props }) => (
-            <h3 className="text-xl font-semibold mb-2 first:mt-0 mt-4 text-foreground" {...props}>
+            <h3 className="text-foreground mt-4 mb-2 text-xl font-semibold first:mt-0" {...props}>
               {children}
             </h3>
           ),
           h4: ({ children, ...props }) => (
-            <h4 className="text-lg font-semibold mb-2 first:mt-0 mt-3 text-foreground" {...props}>
+            <h4 className="text-foreground mt-3 mb-2 text-lg font-semibold first:mt-0" {...props}>
               {children}
             </h4>
           ),
           h5: ({ children, ...props }) => (
-            <h5 className="text-base font-semibold mb-1 first:mt-0 mt-3 text-foreground" {...props}>
+            <h5 className="text-foreground mt-3 mb-1 text-base font-semibold first:mt-0" {...props}>
               {children}
             </h5>
           ),
           h6: ({ children, ...props }) => (
-            <h6 className="text-sm font-semibold mb-1 first:mt-0 mt-2 text-foreground" {...props}>
+            <h6 className="text-foreground mt-2 mb-1 text-sm font-semibold first:mt-0" {...props}>
               {children}
             </h6>
           ),
           // Enhanced paragraph spacing
           p: ({ children, ...props }) => (
-            <p className="mb-3 first:mt-0 last:mb-0 text-foreground leading-relaxed" {...props}>
+            <p className="text-foreground mb-3 leading-relaxed first:mt-0 last:mb-0" {...props}>
               {children}
             </p>
           ),
           // Enhanced list styling
           ul: ({ children, ...props }) => (
-            <ul className="mb-3 last:mb-0 ml-4 list-disc space-y-1" {...props}>
+            <ul className="mb-3 ml-4 list-disc space-y-1 last:mb-0" {...props}>
               {children}
             </ul>
           ),
           ol: ({ children, ...props }) => (
-            <ol className="mb-3 last:mb-0 ml-4 list-decimal space-y-1" {...props}>
+            <ol className="mb-3 ml-4 list-decimal space-y-1 last:mb-0" {...props}>
               {children}
             </ol>
           ),
@@ -87,7 +87,10 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
           ),
           // Enhanced blockquote styling
           blockquote: ({ children, ...props }) => (
-            <blockquote className="border-l-4 border-muted-foreground pl-4 my-4 first:mt-0 last:mb-0 italic text-muted-foreground bg-muted/20 py-2 rounded-r" {...props}>
+            <blockquote
+              className="border-muted-foreground text-muted-foreground bg-muted/20 my-4 rounded-r border-l-4 py-2 pl-4 italic first:mt-0 last:mb-0"
+              {...props}
+            >
               {children}
             </blockquote>
           ),
@@ -96,11 +99,11 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
             const inline = !className;
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <div className="my-4 rounded-lg overflow-hidden bg-card border border-border">
-                <SyntaxHighlighter 
-                  style={oneDark as any} 
-                  language={match[1]} 
-                  PreTag="div" 
+              <div className="bg-card border-border my-4 overflow-hidden rounded-lg border">
+                <SyntaxHighlighter
+                  style={oneDark as any}
+                  language={match[1]}
+                  PreTag="div"
                   customStyle={{
                     margin: 0,
                     background: 'hsl(var(--card))',
@@ -112,7 +115,10 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
                 </SyntaxHighlighter>
               </div>
             ) : (
-              <code className="rounded bg-card px-2 py-1 text-sm font-mono border border-border text-foreground" {...props}>
+              <code
+                className="bg-card border-border text-foreground rounded border px-2 py-1 font-mono text-sm"
+                {...props}
+              >
                 {children}
               </code>
             );
@@ -201,7 +207,7 @@ export const TaskMessageStream: React.FC<TaskMessageStreamProps> = ({ messages }
 
           {/* Main content */}
           <div className="pl-4">
-            <MarkdownContent content={'# User Message:\n' + message} />
+            <MarkdownContent content={'### User Message:\n' + message} />
           </div>
 
           {/* L-shaped border below */}
