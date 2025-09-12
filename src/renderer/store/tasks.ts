@@ -107,7 +107,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   loadTasks: async () => {
     const currentState = get();
     const currentActiveId = currentState.activeTaskId;
-    const currentActiveTask = currentState.activeTask;
 
     set({ isLoading: true, error: null });
 
@@ -121,36 +120,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           tasks.map((t) => ({ id: t.id, name: t.name, repos: t.repositories.length }))
         );
 
-        // Preserve current active task if it exists, otherwise use backend's active task
+        // Use backend's active task or preserve current selection
         const activeTaskId = currentActiveId || response.data.activeTaskId;
-        let activeTask = tasks.find((t) => t.id === activeTaskId) || null;
+        const activeTask = tasks.find((t) => t.id === activeTaskId) || null;
 
-        // If we have a current active task with updated repo statuses, preserve those statuses
-        if (currentActiveTask && activeTask && currentActiveTask.id === activeTask.id) {
-          // Merge repository statuses from current active task
-          activeTask = {
-            ...activeTask,
-            repositories: activeTask.repositories.map((repo, index) => {
-              const currentRepo = currentActiveTask.repositories[index];
-              if (
-                currentRepo &&
-                currentRepo.id === repo.id &&
-                (currentRepo.status === 'ready' || currentRepo.status === 'error')
-              ) {
-                // Preserve the updated status
-                return {
-                  ...repo,
-                  status: currentRepo.status,
-                  errorMessage: currentRepo.errorMessage,
-                };
-              }
-              return repo;
-            }),
-          };
-        }
+        // Trust backend data as source of truth - no status preservation
+        // Worktree progress events will update statuses in real-time
 
         set({
-          tasks: tasks.map((t) => (t.id === activeTaskId ? activeTask : t)),
+          tasks,
           activeTaskId,
           activeTask,
           isLoading: false,
