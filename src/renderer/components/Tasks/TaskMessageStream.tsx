@@ -14,8 +14,6 @@ import {
   BashTool,
   BashOutputTool,
   KillBashTool,
-  GrepTool,
-  GlobTool,
   WebSearchTool,
   WebFetchTool,
   TaskTool,
@@ -31,18 +29,96 @@ interface TaskMessageStreamProps {
 // Component for rendering markdown content
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert my-2 max-w-none">
       <ReactMarkdown
         components={{
+          // Enhanced header components with proper sizing
+          h1: ({ children, ...props }) => (
+            <h1 className="text-foreground mt-6 mb-4 text-3xl font-semibold first:mt-0" {...props}>
+              {children}
+            </h1>
+          ),
+          h2: ({ children, ...props }) => (
+            <h2 className="text-foreground mt-5 mb-3 text-2xl font-semibold first:mt-0" {...props}>
+              {children}
+            </h2>
+          ),
+          h3: ({ children, ...props }) => (
+            <h3 className="text-foreground mt-4 mb-2 text-xl font-semibold first:mt-0" {...props}>
+              {children}
+            </h3>
+          ),
+          h4: ({ children, ...props }) => (
+            <h4 className="text-foreground mt-3 mb-2 text-lg font-semibold first:mt-0" {...props}>
+              {children}
+            </h4>
+          ),
+          h5: ({ children, ...props }) => (
+            <h5 className="text-foreground mt-3 mb-1 text-base font-semibold first:mt-0" {...props}>
+              {children}
+            </h5>
+          ),
+          h6: ({ children, ...props }) => (
+            <h6 className="text-foreground mt-2 mb-1 text-sm font-semibold first:mt-0" {...props}>
+              {children}
+            </h6>
+          ),
+          // Enhanced paragraph spacing
+          p: ({ children, ...props }) => (
+            <p className="text-foreground mb-3 leading-relaxed first:mt-0 last:mb-0" {...props}>
+              {children}
+            </p>
+          ),
+          // Enhanced list styling
+          ul: ({ children, ...props }) => (
+            <ul className="mb-3 ml-4 list-disc space-y-1 last:mb-0" {...props}>
+              {children}
+            </ul>
+          ),
+          ol: ({ children, ...props }) => (
+            <ol className="mb-3 ml-4 list-decimal space-y-1 last:mb-0" {...props}>
+              {children}
+            </ol>
+          ),
+          li: ({ children, ...props }) => (
+            <li className="text-foreground" {...props}>
+              {children}
+            </li>
+          ),
+          // Enhanced blockquote styling
+          blockquote: ({ children, ...props }) => (
+            <blockquote
+              className="border-muted-foreground text-muted-foreground bg-muted/20 my-4 rounded-r border-l-4 py-2 pl-4 italic first:mt-0 last:mb-0"
+              {...props}
+            >
+              {children}
+            </blockquote>
+          ),
+          // Code blocks and inline code
           code({ className, children, ...props }: any) {
             const inline = !className;
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <SyntaxHighlighter style={oneDark as any} language={match[1]} PreTag="div" {...(props as any)}>
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              <div className="bg-card border-border my-4 overflow-hidden rounded-lg border">
+                <SyntaxHighlighter
+                  style={oneDark as any}
+                  language={match[1]}
+                  PreTag="div"
+                  customStyle={{
+                    margin: 0,
+                    background: 'hsl(var(--card))',
+                    fontSize: '0.875rem',
+                  }}
+                  {...(props as any)}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              </div>
             ) : (
-              <code className="rounded bg-gray-100 px-1 py-0.5 text-sm" {...props}>
+              <code
+                className="bg-card border-border text-foreground rounded border px-2 py-1 font-mono text-sm"
+                {...props}
+              >
                 {children}
               </code>
             );
@@ -76,9 +152,11 @@ const ToolUseComponent: React.FC<{ toolId: string }> = ({ toolId }) => {
     case 'KillBash':
       return <KillBashTool input={input} />;
     case 'Grep':
-      return <GrepTool input={input} />;
+      return null;
+    // return <GrepTool input={input} />;
     case 'Glob':
-      return <GlobTool input={input} />;
+      return null;
+    // return <GlobTool input={input} />;
     case 'WebSearch':
       return <WebSearchTool input={input} />;
     case 'WebFetch':
@@ -129,7 +207,7 @@ export const TaskMessageStream: React.FC<TaskMessageStreamProps> = ({ messages }
 
           {/* Main content */}
           <div className="pl-4">
-            <MarkdownContent content={'# User Message:\n' + message} />
+            <MarkdownContent content={'### User Message:\n' + message} />
           </div>
 
           {/* L-shaped border below */}

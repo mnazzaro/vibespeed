@@ -144,7 +144,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({
     <div className="relative">
       {/* Plan mode indicator in the border */}
       {planMode && (
-        <div className="bg-background absolute -top-2 right-4 z-10 px-2">
+        <div className="bg-background absolute -top-3 right-4 z-10 border px-2">
           <span className="text-primary/70 font-mono text-xs">Planning</span>
         </div>
       )}

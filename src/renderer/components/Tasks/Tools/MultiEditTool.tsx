@@ -1,4 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
+
+import { ToolUsageProvider } from '@/renderer/components/Tasks/TaskChat';
+
+import { getRelativePath } from './utils';
 
 interface MultiEditToolProps {
   input: {
@@ -11,10 +15,12 @@ interface MultiEditToolProps {
 }
 
 export const MultiEditTool: React.FC<MultiEditToolProps> = ({ input }) => {
+  const { workingDirectory } = useContext(ToolUsageProvider);
+  const displayPath = getRelativePath(input.file_path, workingDirectory);
   return (
     <div className="my-2 font-mono text-xs">
       <div className="text-muted-foreground mb-1">
-        {input.file_path} <span className="opacity-70">({input.edits.length} edits)</span>
+        Editing: {displayPath} <span className="opacity-70">({input.edits.length} edits)</span>
       </div>
       <div className="space-y-1 pl-4">
         {input.edits.slice(0, 3).map((edit, index) => (
