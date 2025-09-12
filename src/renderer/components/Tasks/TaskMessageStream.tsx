@@ -1,26 +1,28 @@
 import { SDKAssistantMessage, SDKMessage, SDKSystemMessage } from '@anthropic-ai/claude-code';
-import {
-  Bot,
-  FileEdit,
-  Notebook,
-  Search,
-  FolderSearch,
-  Globe,
-  Globe2,
-  Terminal,
-  Monitor,
-  XCircle,
-  ListTodo,
-  CheckSquare,
-  Flag,
-  BookOpen,
-} from 'lucide-react';
+import { Bot } from 'lucide-react';
 import React, { useRef, useContext } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 import { ToolUsageProvider } from '@/renderer/components/Tasks/TaskChat';
+import {
+  ReadTool,
+  WriteTool,
+  EditTool,
+  MultiEditTool,
+  BashTool,
+  BashOutputTool,
+  KillBashTool,
+  GrepTool,
+  GlobTool,
+  WebSearchTool,
+  WebFetchTool,
+  TaskTool,
+  TodoWriteTool,
+  NotebookEditTool,
+  ExitPlanModeTool,
+} from '@/renderer/components/Tasks/Tools';
 
 interface TaskMessageStreamProps {
   messages: (SDKMessage | string)[];
@@ -57,113 +59,40 @@ const ToolUseComponent: React.FC<{ toolId: string }> = ({ toolId }) => {
   const { toolStates } = useContext(ToolUsageProvider);
   const toolState = toolStates.get(toolId);
   if (!toolState) return null;
-  if (toolState.name === 'Read') {
-    return (
-      <div className="flex items-center gap-2">
-        <BookOpen className="h-4 w-4" />
-        <span>Reading {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'Write') {
-    return (
-      <div className="flex items-center gap-2">
-        <FileEdit className="h-4 w-4" />
-        <span>Writing {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'Edit') {
-    return (
-      <div className="flex items-center gap-2">
-        <FileEdit className="h-4 w-4" />
-        <span>Editing {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'MultiEdit') {
-    return (
-      <div className="flex items-center gap-2">
-        <FileEdit className="h-4 w-4" />
-        <span>Multi-editing {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'Bash') {
-    return (
-      <div className="flex items-center gap-2">
-        <Terminal className="h-4 w-4" />
-        <span>Bashing {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'BashOutput') {
-    return (
-      <div className="flex items-center gap-2">
-        <Monitor className="h-4 w-4" />
-        <span>Bash output {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'KillBash') {
-    return (
-      <div className="flex items-center gap-2">
-        <XCircle className="h-4 w-4" />
-        <span>Killing bash {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'Grep') {
-    return (
-      <div className="flex items-center gap-2">
-        <Search className="h-4 w-4" />
-        <span>Grepping {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'Glob') {
-    return (
-      <div className="flex items-center gap-2">
-        <FolderSearch className="h-4 w-4" />
-        <span>Globbing {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'WebSearch') {
-    return (
-      <div className="flex items-center gap-2">
-        <Globe className="h-4 w-4" />
-        <span>Web searching {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'WebFetch') {
-    return (
-      <div className="flex items-center gap-2">
-        <Globe2 className="h-4 w-4" />
-        <span>Web fetching {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'Task') {
-    return (
-      <div className="flex items-center gap-2">
-        <ListTodo className="h-4 w-4" />
-        <span>Tasking {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'TodoWrite') {
-    return (
-      <div className="flex items-center gap-2">
-        <CheckSquare className="h-4 w-4" />
-        <span>Todo writing {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'NotebookEdit') {
-    return (
-      <div className="flex items-center gap-2">
-        <Notebook className="h-4 w-4" />
-        <span>Notebook editing {toolState.input.toString()}</span>
-      </div>
-    );
-  } else if (toolState.name === 'ExitPlanMode') {
-    return (
-      <div className="flex items-center gap-2">
-        <Flag className="h-4 w-4" />
-        <span>Exit plan mode {toolState.input.toString()}</span>
-      </div>
-    );
-  } else {
-    return null;
+  const input = toolState.input;
+  switch (toolState.name) {
+    case 'Read':
+      return <ReadTool input={input} />;
+    case 'Write':
+      return <WriteTool input={input} />;
+    case 'Edit':
+      return <EditTool input={input} />;
+    case 'MultiEdit':
+      return <MultiEditTool input={input} />;
+    case 'Bash':
+      return <BashTool input={input} />;
+    case 'BashOutput':
+      return <BashOutputTool input={input} />;
+    case 'KillBash':
+      return <KillBashTool input={input} />;
+    case 'Grep':
+      return <GrepTool input={input} />;
+    case 'Glob':
+      return <GlobTool input={input} />;
+    case 'WebSearch':
+      return <WebSearchTool input={input} />;
+    case 'WebFetch':
+      return <WebFetchTool input={input} />;
+    case 'Task':
+      return <TaskTool input={input} />;
+    case 'TodoWrite':
+      return <TodoWriteTool input={input} />;
+    case 'NotebookEdit':
+      return <NotebookEditTool input={input} />;
+    case 'ExitPlanMode':
+      return <ExitPlanModeTool input={input} />;
+    default:
+      return null;
   }
 };
 
