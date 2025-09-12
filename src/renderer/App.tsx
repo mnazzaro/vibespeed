@@ -84,7 +84,7 @@ export const App: React.FC = () => {
               <div className="flex h-full items-center justify-center p-8">
                 <div className="text-center">
                   <p className="text-muted-foreground font-serif leading-relaxed">
-                    Press <kbd className="border-b px-2 py-1 font-mono text-sm">⌘N</kbd> to begin a new task
+                    Press <kbd className="border-b px-2 py-1 font-mono text-sm">⌘ + N</kbd> to begin a new task
                   </p>
                 </div>
               </div>

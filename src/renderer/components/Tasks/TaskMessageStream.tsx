@@ -14,8 +14,6 @@ import {
   BashTool,
   BashOutputTool,
   KillBashTool,
-  GrepTool,
-  GlobTool,
   WebSearchTool,
   WebFetchTool,
   TaskTool,
@@ -76,9 +74,11 @@ const ToolUseComponent: React.FC<{ toolId: string }> = ({ toolId }) => {
     case 'KillBash':
       return <KillBashTool input={input} />;
     case 'Grep':
-      return <GrepTool input={input} />;
+      return null;
+    // return <GrepTool input={input} />;
     case 'Glob':
-      return <GlobTool input={input} />;
+      return null;
+    // return <GlobTool input={input} />;
     case 'WebSearch':
       return <WebSearchTool input={input} />;
     case 'WebFetch':

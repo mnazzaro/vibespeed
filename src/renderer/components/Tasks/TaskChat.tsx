@@ -35,11 +35,13 @@ export interface ToolState {
 export interface ToolStateProviderProps {
   toolStates: Map<string, ToolState>;
   updateToolState: (toolId: string, toolState: Partial<ToolState>) => void;
+  workingDirectory?: string;
 }
 
 export const ToolUsageProvider = createContext<ToolStateProviderProps>({
   toolStates: new Map(),
   updateToolState: () => {},
+  workingDirectory: undefined,
 });
 
 export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
@@ -196,7 +198,13 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
             <h3 className="mb-3 font-serif text-2xl">What do you want to build?</h3>
           </div>
         ) : (
-          <ToolUsageProvider.Provider value={{ toolStates, updateToolState }}>
+          <ToolUsageProvider.Provider
+            value={{
+              toolStates,
+              updateToolState,
+              workingDirectory: task.worktreeBasePath,
+            }}
+          >
             <TaskMessageStream messages={task.messages} />
           </ToolUsageProvider.Provider>
         )}
