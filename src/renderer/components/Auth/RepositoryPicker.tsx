@@ -129,7 +129,7 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({ onSelect, mu
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <GitBranch className="text-muted-foreground h-4 w-4" />
-                    <span className="font-medium">{repo.name}</span>
+                    <span className="font-mono font-medium">{repo.name}</span>
                     {repo.private ? (
                       <Lock className="text-muted-foreground h-3 w-3" />
                     ) : (

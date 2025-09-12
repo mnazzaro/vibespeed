@@ -46,7 +46,7 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
   return (
     <div className="space-y-2">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-muted-foreground text-xs font-semibold uppercase">Tasks</h2>
+        <h2 className="text-muted-foreground font-mono text-xs">Tasks</h2>
         <Button onClick={onCreateClick} variant="ghost" size="sm" className="h-6 px-2">
           <Plus className="mr-1 h-3 w-3" />
           New

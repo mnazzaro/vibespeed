@@ -1,5 +1,4 @@
 import { Options, SDKMessage } from '@anthropic-ai/claude-code';
-import { Bot } from 'lucide-react';
 import React, { useState, useRef, useEffect, createContext } from 'react';
 
 import { TaskInput } from '@/renderer/components/Tasks/TaskInput';
@@ -194,14 +193,10 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="paper-texture flex-1 overflow-y-auto p-4">
         {task.messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <Bot className="text-muted-foreground mb-4 h-12 w-12" />
-            <h3 className="mb-2 text-lg font-medium">Start a conversation</h3>
-            <p className="text-muted-foreground max-w-md text-sm">
-              Describe what you want to build or ask questions about your code. Claude will help you with your task.
-            </p>
+            <h3 className="mb-3 font-serif text-2xl">What do you want to build?</h3>
           </div>
         ) : (
           <ToolUsageProvider.Provider value={{ toolStates, updateToolState }}>

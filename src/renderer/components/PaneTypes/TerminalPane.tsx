@@ -1,9 +1,7 @@
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
-import { Plus, X, Terminal as TerminalIcon } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTaskStore } from '@/renderer/store/tasks';
 import { PaneConfig } from '@/shared/types/panes';
@@ -91,19 +89,65 @@ const TerminalPane: React.FC<TerminalPaneProps> = ({ isActive }) => {
 
       console.log('[Terminal] Terminal session created:', result.sessionId);
 
-      // Create xterm.js instance with a simple theme first
+      // Detect if dark mode is active
+      const isDarkMode = document.documentElement.classList.contains('dark');
+
+      // Create xterm.js instance with theme matching the paper aesthetic
       const terminal = new Terminal({
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-        fontSize: 10,
-        theme: {
-          background: '#1e1e1e',
-          foreground: '#ffffff',
-          cursor: '#ffffff',
-          cursorAccent: '#1e1e1e',
-        },
+        fontFamily: 'IBM Plex Mono, monospace',
+        fontSize: 13,
+        theme: isDarkMode
+          ? {
+              // Dark charcoal paper theme
+              background: 'hsl(30 8% 12%)',
+              foreground: 'hsl(37 20% 85%)',
+              cursor: 'hsl(37 15% 75%)',
+              cursorAccent: 'hsl(30 8% 12%)',
+              black: 'hsl(30 8% 12%)',
+              red: 'hsl(0 25% 40%)',
+              green: 'hsl(120 15% 50%)',
+              yellow: 'hsl(45 25% 55%)',
+              blue: 'hsl(210 15% 55%)',
+              magenta: 'hsl(300 10% 50%)',
+              cyan: 'hsl(180 15% 50%)',
+              white: 'hsl(37 20% 85%)',
+              brightBlack: 'hsl(30 5% 25%)',
+              brightRed: 'hsl(0 20% 50%)',
+              brightGreen: 'hsl(120 10% 60%)',
+              brightYellow: 'hsl(45 20% 65%)',
+              brightBlue: 'hsl(210 10% 65%)',
+              brightMagenta: 'hsl(300 8% 60%)',
+              brightCyan: 'hsl(180 10% 60%)',
+              brightWhite: 'hsl(37 25% 90%)',
+            }
+          : {
+              // Light manila paper theme
+              background: 'hsl(37 30% 96%)',
+              foreground: 'hsl(30 20% 25%)',
+              cursor: 'hsl(30 15% 35%)',
+              cursorAccent: 'hsl(37 30% 96%)',
+              black: 'hsl(30 20% 25%)',
+              red: 'hsl(0 30% 45%)',
+              green: 'hsl(120 20% 35%)',
+              yellow: 'hsl(45 30% 40%)',
+              blue: 'hsl(210 20% 40%)',
+              magenta: 'hsl(300 15% 40%)',
+              cyan: 'hsl(180 20% 35%)',
+              white: 'hsl(37 20% 85%)',
+              brightBlack: 'hsl(30 10% 45%)',
+              brightRed: 'hsl(0 25% 50%)',
+              brightGreen: 'hsl(120 15% 45%)',
+              brightYellow: 'hsl(45 25% 50%)',
+              brightBlue: 'hsl(210 15% 50%)',
+              brightMagenta: 'hsl(300 10% 50%)',
+              brightCyan: 'hsl(180 15% 45%)',
+              brightWhite: 'hsl(37 25% 90%)',
+            },
         cursorBlink: true,
         scrollback: 10000,
         convertEol: true,
+        letterSpacing: 0.5,
+        lineHeight: 1.4,
       });
 
       // Create addons
@@ -439,50 +483,45 @@ const TerminalPane: React.FC<TerminalPaneProps> = ({ isActive }) => {
   }, [isActive, activeTerminalId]);
 
   return (
-    <div className="flex h-full flex-col bg-[#0a0a0a]">
+    <div className="bg-background paper-texture flex h-full flex-col">
       {/* Tabs */}
-      <div className="flex h-8 items-center border-b border-gray-800 bg-[#141414] px-1">
-        <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+      <div className="flex h-8 items-center border-b px-2">
+        <div className="flex flex-1 items-center gap-2 overflow-x-auto">
           {terminals.map((terminal) => (
             <div
               key={terminal.id}
               className={cn(
-                'group flex h-6 cursor-pointer items-center gap-1 rounded px-2 text-xs transition-colors',
+                'group flex h-6 cursor-pointer items-center gap-1 px-2 font-mono text-xs transition-all',
                 terminal.id === activeTerminalId
-                  ? 'bg-[#1e1e1e] text-white'
-                  : 'text-gray-400 hover:bg-[#1a1a1a] hover:text-gray-200'
+                  ? 'border-foreground/30 border-b-2'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={() => switchToTerminal(terminal.id)}
             >
-              <TerminalIcon className="h-3 w-3" />
               <span className="max-w-[120px] truncate">{terminal.title}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-1 h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:bg-transparent"
+              <button
+                className="hover:text-foreground ml-1 opacity-0 transition-opacity group-hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   closeTerminal(terminal.id);
                 }}
               >
-                <X className="h-3 w-3" />
-              </Button>
+                <span className="text-xs">×</span>
+              </button>
             </div>
           ))}
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 text-gray-400 hover:text-white"
+        <button
+          className="text-muted-foreground hover:text-foreground px-2 font-mono text-xs transition-colors"
           onClick={() => {
             console.log('[Terminal] Plus button clicked!');
             createNewTerminal();
           }}
           title="New Terminal"
         >
-          <Plus className="h-4 w-4" />
-        </Button>
+          +
+        </button>
       </div>
 
       {/* Terminal Container */}
@@ -491,12 +530,13 @@ const TerminalPane: React.FC<TerminalPaneProps> = ({ isActive }) => {
           {terminals.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <TerminalIcon className="mx-auto mb-2 h-8 w-8 text-gray-600" />
-                <p className="text-sm text-gray-500">No terminal sessions</p>
-                <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={createNewTerminal}>
-                  <Plus className="mr-1 h-3 w-3" />
+                <p className="text-muted-foreground mb-3 font-serif">No terminal sessions</p>
+                <button
+                  className="border-foreground/20 hover:bg-accent/20 border-b px-2 py-1 font-mono text-xs transition-colors"
+                  onClick={createNewTerminal}
+                >
                   New Terminal
-                </Button>
+                </button>
               </div>
             </div>
           )}

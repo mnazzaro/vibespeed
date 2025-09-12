@@ -105,7 +105,6 @@ export const PaneWrapper: React.FC<PaneWrapperProps> = ({ pane }) => {
             fallback={
               <div className="flex h-full items-center justify-center">
                 <div className="text-center">
-                  <div className="border-primary mb-2 h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
                   <p className="text-muted-foreground text-xs">Loading pane...</p>
                 </div>
               </div>
