@@ -111,7 +111,7 @@ export class ClaudeService {
           'Task',
           'TodoWrite',
           'NotebookEdit',
-          'ExitPlanMode',
+          ...(options.permissionMode === 'plan' ? [] : ['ExitPlanMode']),
         ],
         appendSystemPrompt:
           options.appendSystemPrompt ||

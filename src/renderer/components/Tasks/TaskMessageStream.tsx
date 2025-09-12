@@ -61,21 +61,21 @@ const ToolUseComponent: React.FC<{ toolId: string }> = ({ toolId }) => {
     return (
       <div className="flex items-center gap-2">
         <BookOpen className="h-4 w-4" />
-        <span>Reading {toolState.input}</span>
+        <span>Reading {toolState.input.toString()}</span>
       </div>
     );
   } else if (toolState.name === 'Write') {
     return (
       <div className="flex items-center gap-2">
         <FileEdit className="h-4 w-4" />
-        <span>Writing {toolState.input}</span>
+        <span>Writing {toolState.input.toString()}</span>
       </div>
     );
   } else if (toolState.name === 'Edit') {
     return (
       <div className="flex items-center gap-2">
         <FileEdit className="h-4 w-4" />
-        <span>Editing {toolState.input}</span>
+        <span>Editing {toolState.input.toString()}</span>
       </div>
     );
   } else if (toolState.name === 'MultiEdit') {

@@ -82,6 +82,8 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     const handleStreamEvent = (taskId: string, event: SDKMessage) => {
       if (taskId !== task.id) return;
 
+      console.log('Stream event:', event);
+
       addMessage(taskId, event);
 
       if (event.type === 'assistant') {
