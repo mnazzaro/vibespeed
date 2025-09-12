@@ -4,13 +4,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { AuthResponse, GitHubInstallation, GitHubRepository, AuthToken, UserProfile } from './shared/types/auth';
-import type {
-  ClaudeQueryOptions,
-  ClaudeIPCResponse,
-  ClaudeServiceStatus,
-  ClaudeStreamEvent,
-} from './shared/types/claude';
-import type { Task, CreateTaskParams, TaskIPCResponse, ChatMessage, WorktreeProgress } from './shared/types/tasks';
+import type { ClaudeQueryOptions, ClaudeIPCResponse, ClaudeServiceStatus } from './shared/types/claude';
+import type { Task, CreateTaskParams, TaskIPCResponse, WorktreeProgress } from './shared/types/tasks';
+import { SDKMessage } from '@anthropic-ai/claude-code';
 
 // Define the API that will be exposed to the renderer
 const authAPI = {
@@ -135,10 +131,7 @@ const tasksAPI = {
     return await ipcRenderer.invoke('task:setupWorktrees', taskId);
   },
 
-  sendMessage: async (
-    taskId: string,
-    message: Omit<ChatMessage, 'id' | 'timestamp'>
-  ): Promise<TaskIPCResponse<ChatMessage>> => {
+  sendMessage: async (taskId: string, message: SDKMessage): Promise<TaskIPCResponse<SDKMessage>> => {
     return await ipcRenderer.invoke('task:sendMessage', taskId, message);
   },
 
@@ -199,7 +192,7 @@ const tasksAPI = {
     ipcRenderer.on('task:worktree-progress', (event, progress) => callback(progress));
   },
 
-  onMessageReceived: (callback: (taskId: string, message: ChatMessage) => void) => {
+  onMessageReceived: (callback: (taskId: string, message: SDKMessage) => void) => {
     ipcRenderer.on('task:message-received', (event, taskId, message) => callback(taskId, message));
   },
 
@@ -315,8 +308,8 @@ const claudeAPI = {
     return await ipcRenderer.invoke('claude:sendMessage', taskId, message, options);
   },
 
-  cancelQuery: async (messageId: string): Promise<ClaudeIPCResponse<boolean>> => {
-    return await ipcRenderer.invoke('claude:cancelQuery', messageId);
+  cancelQuery: async (taskId: string): Promise<ClaudeIPCResponse<boolean>> => {
+    return await ipcRenderer.invoke('claude:cancelQuery', taskId);
   },
 
   getStatus: async (): Promise<ClaudeIPCResponse<ClaudeServiceStatus>> => {
@@ -332,10 +325,8 @@ const claudeAPI = {
   },
 
   // Event listeners
-  onStreamEvent: (callback: (taskId: string, messageId: string, event: ClaudeStreamEvent) => void) => {
-    ipcRenderer.on('claude:stream-event', (event, taskId, messageId, streamEvent) =>
-      callback(taskId, messageId, streamEvent)
-    );
+  onStreamEvent: (callback: (taskId: string, event: SDKMessage) => void) => {
+    ipcRenderer.on('claude:stream-event', (event, taskId, streamEvent) => callback(taskId, streamEvent));
   },
 
   removeClaudeListeners: () => {

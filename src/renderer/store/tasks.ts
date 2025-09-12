@@ -1,6 +1,7 @@
+import { SDKMessage } from '@anthropic-ai/claude-code';
 import { create } from 'zustand';
 
-import { Task, CreateTaskParams, ChatMessage, WorktreeProgress } from '../../shared/types/tasks';
+import { Task, CreateTaskParams, WorktreeProgress } from '../../shared/types/tasks';
 
 interface TaskStore {
   // State
@@ -16,6 +17,8 @@ interface TaskStore {
     defaultBranch: string;
   }>;
   worktreeProgress: Record<string, WorktreeProgress>;
+  // Streaming messages for each task (temporary messages not yet persisted)
+  streamingMessages: Map<string, (SDKMessage | string)[]>;
 
   // Actions
   createTask: (params: CreateTaskParams) => Promise<Task>;
@@ -23,7 +26,12 @@ interface TaskStore {
   selectTask: (taskId: string) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
-  sendMessage: (taskId: string, content: string) => Promise<ChatMessage>;
+
+  // Streaming message actions
+  addStreamingMessage: (taskId: string, message: SDKMessage | string) => void;
+  clearStreamingMessages: (taskId: string) => void;
+  commitStreamingMessages: (taskId: string, sessionId?: string) => void;
+  getMessagesForTask: (taskId: string) => (SDKMessage | string)[];
 
   // Task creation flow
   startTaskCreation: () => void;
@@ -58,6 +66,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   isCreatingTask: false,
   selectedReposForNewTask: [],
   worktreeProgress: {},
+  streamingMessages: new Map(),
   isLoading: false,
   error: null,
 
@@ -181,10 +190,32 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const response = await window.electronAPI.tasks.update(taskId, updates);
 
       if (response.success && response.data) {
-        set((state) => ({
-          tasks: state.tasks.map((t) => (t.id === taskId ? response.data : t)),
-          activeTask: state.activeTaskId === taskId ? response.data : state.activeTask,
-        }));
+        set((state) => {
+          // Get the current task to check if we need to preserve local data
+          const currentTask = state.tasks.find((t) => t.id === taskId);
+          let updatedTask = response.data;
+
+          // If we have local messages that the backend doesn't have yet, preserve them
+          // This can happen when we've committed streaming messages but the backend hasn't processed them yet
+          if (currentTask && currentTask.messages && updatedTask.messages) {
+            // Check if our local messages include everything from backend plus more
+            const backendMessageCount = updatedTask.messages.filter((m: any) => typeof m !== 'string').length;
+            const localMessageCount = currentTask.messages.filter((m: any) => typeof m !== 'string').length;
+
+            if (localMessageCount > backendMessageCount) {
+              // Keep our local messages as they're more complete
+              updatedTask = {
+                ...updatedTask,
+                messages: currentTask.messages,
+              };
+            }
+          }
+
+          return {
+            tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+            activeTask: state.activeTaskId === taskId ? updatedTask : state.activeTask,
+          };
+        });
       }
     } catch (error) {
       set({
@@ -203,10 +234,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           const wasActive = state.activeTaskId === taskId;
           const newActiveTask = wasActive ? newTasks[0] : state.activeTask;
 
+          // Also clean up streaming messages for this task
+          const newStreamingMessages = new Map(state.streamingMessages);
+          newStreamingMessages.delete(taskId);
+
           return {
             tasks: newTasks,
             activeTaskId: newActiveTask?.id || null,
             activeTask: newActiveTask || null,
+            streamingMessages: newStreamingMessages,
           };
         });
       }
@@ -217,45 +253,70 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
 
-  sendMessage: async (taskId: string, content: string) => {
-    try {
-      // Just add the user message to the store - Claude integration happens in TaskChat
-      const response = await window.electronAPI.tasks.sendMessage(taskId, {
-        role: 'user',
-        content,
-      });
+  // Streaming message actions
+  addStreamingMessage: (taskId: string, message: SDKMessage | string) => {
+    set((state) => {
+      const newMap = new Map(state.streamingMessages);
+      const currentMessages = newMap.get(taskId) || [];
+      newMap.set(taskId, [...currentMessages, message]);
+      return { streamingMessages: newMap };
+    });
+  },
 
-      if (response.success && response.data) {
-        // Update local state with new message
-        set((state) => ({
-          tasks: state.tasks.map((t) => {
-            if (t.id === taskId) {
-              return {
-                ...t,
-                messages: [...t.messages, response.data],
-              };
-            }
-            return t;
-          }),
-          activeTask:
-            state.activeTaskId === taskId
-              ? {
-                  ...state.activeTask!,
-                  messages: [...state.activeTask!.messages, response.data],
-                }
-              : state.activeTask,
-        }));
+  clearStreamingMessages: (taskId: string) => {
+    set((state) => {
+      const newMap = new Map(state.streamingMessages);
+      newMap.delete(taskId);
+      return { streamingMessages: newMap };
+    });
+  },
 
-        return response.data;
-      } else {
-        throw new Error(response.error || 'Failed to send message');
-      }
-    } catch (error) {
-      set({
-        error: error.message || 'Failed to send message',
+  commitStreamingMessages: (taskId: string, sessionId?: string) => {
+    const state = get();
+    const streamingMsgs = state.streamingMessages.get(taskId) || [];
+
+    if (streamingMsgs.length === 0 && !sessionId) return;
+
+    const task = state.tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    // Combine existing messages with streaming messages and update sessionId
+    const updatedTask = {
+      ...task,
+      messages: [...task.messages, ...streamingMsgs],
+      ...(sessionId ? { sessionId } : {}),
+    };
+
+    // Update the task with the committed messages locally
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
+      activeTask: state.activeTaskId === taskId ? updatedTask : state.activeTask,
+    }));
+
+    // Clear streaming messages for this task
+    get().clearStreamingMessages(taskId);
+
+    // Persist to backend asynchronously without awaiting
+    // This ensures the backend gets updated but doesn't overwrite our local state
+    window.electronAPI.tasks
+      .update(taskId, {
+        messages: updatedTask.messages,
+        sessionId: updatedTask.sessionId,
+      })
+      .catch((error) => {
+        console.error('Failed to persist messages to backend:', error);
       });
-      throw error;
-    }
+  },
+
+  getMessagesForTask: (taskId: string): (SDKMessage | string)[] => {
+    const state = get();
+    const task = state.tasks.find((t) => t.id === taskId);
+    const streamingMsgs = state.streamingMessages.get(taskId) || [];
+
+    if (!task) return streamingMsgs;
+
+    // Return combined messages (persisted + streaming)
+    return [...task.messages, ...streamingMsgs];
   },
 
   // Task creation flow

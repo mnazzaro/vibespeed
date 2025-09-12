@@ -1,12 +1,3 @@
-export interface ClaudeEvent {
-  id: string;
-  type: 'text' | 'tool_use' | 'status' | 'error' | 'stream_event';
-  content?: string;
-  tool?: ToolUsageInfo;
-  timestamp: Date;
-  metadata?: Record<string, any>;
-}
-
 export interface ToolUsageInfo {
   id?: string; // Tool use ID for matching with results
   name: string;
@@ -17,16 +8,6 @@ export interface ToolUsageInfo {
   icon?: string;
 }
 
-export interface ClaudeMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: Date;
-  events?: ClaudeEvent[];
-  isStreaming?: boolean;
-  metadata?: Record<string, any>;
-}
-
 export interface ClaudeQueryOptions {
   taskId: string;
   workingDirectory: string;
@@ -34,21 +15,9 @@ export interface ClaudeQueryOptions {
   allowedTools?: string[];
   appendSystemPrompt?: string;
   includePartialMessages?: boolean;
-}
-
-export interface ClaudeStreamEvent {
-  type: 'partial' | 'complete' | 'tool_start' | 'tool_end' | 'tool_result' | 'thinking' | 'error';
-  content?: string;
-  toolName?: string;
-  toolParams?: any;
-  toolResult?: any;
-  toolUseId?: string;
-  thinkingContent?: string;
-  error?: string;
-  messageId: string;
-  // For complete event, include all accumulated data
-  events?: ClaudeEvent[];
-  thinkingBlocks?: string[];
+  maxTokens?: number;
+  temperature?: number;
+  model?: 'claude-opus-4-1-20250805' | 'claude-sonnet-4-20250514';
 }
 
 export interface ClaudeIPCResponse<T = any> {

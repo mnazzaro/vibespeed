@@ -25,7 +25,7 @@ export function setupClaudeHandlers(mainWindow: BrowserWindow): void {
       taskId: string,
       message: string,
       options?: Partial<ClaudeQueryOptions>
-    ): Promise<ClaudeIPCResponse<{ messageId: string }>> => {
+    ): Promise<ClaudeIPCResponse<{ sessionId?: string }>> => {
       try {
         const result = await claudeService.sendMessage(taskId, message, options);
         return {
