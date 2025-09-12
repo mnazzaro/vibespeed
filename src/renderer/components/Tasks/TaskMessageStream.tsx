@@ -31,18 +31,90 @@ interface TaskMessageStreamProps {
 // Component for rendering markdown content
 const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert max-w-none my-2">
       <ReactMarkdown
         components={{
+          // Enhanced header components with proper sizing
+          h1: ({ children, ...props }) => (
+            <h1 className="text-3xl font-semibold mb-4 first:mt-0 mt-6 text-foreground" {...props}>
+              {children}
+            </h1>
+          ),
+          h2: ({ children, ...props }) => (
+            <h2 className="text-2xl font-semibold mb-3 first:mt-0 mt-5 text-foreground" {...props}>
+              {children}
+            </h2>
+          ),
+          h3: ({ children, ...props }) => (
+            <h3 className="text-xl font-semibold mb-2 first:mt-0 mt-4 text-foreground" {...props}>
+              {children}
+            </h3>
+          ),
+          h4: ({ children, ...props }) => (
+            <h4 className="text-lg font-semibold mb-2 first:mt-0 mt-3 text-foreground" {...props}>
+              {children}
+            </h4>
+          ),
+          h5: ({ children, ...props }) => (
+            <h5 className="text-base font-semibold mb-1 first:mt-0 mt-3 text-foreground" {...props}>
+              {children}
+            </h5>
+          ),
+          h6: ({ children, ...props }) => (
+            <h6 className="text-sm font-semibold mb-1 first:mt-0 mt-2 text-foreground" {...props}>
+              {children}
+            </h6>
+          ),
+          // Enhanced paragraph spacing
+          p: ({ children, ...props }) => (
+            <p className="mb-3 first:mt-0 last:mb-0 text-foreground leading-relaxed" {...props}>
+              {children}
+            </p>
+          ),
+          // Enhanced list styling
+          ul: ({ children, ...props }) => (
+            <ul className="mb-3 last:mb-0 ml-4 list-disc space-y-1" {...props}>
+              {children}
+            </ul>
+          ),
+          ol: ({ children, ...props }) => (
+            <ol className="mb-3 last:mb-0 ml-4 list-decimal space-y-1" {...props}>
+              {children}
+            </ol>
+          ),
+          li: ({ children, ...props }) => (
+            <li className="text-foreground" {...props}>
+              {children}
+            </li>
+          ),
+          // Enhanced blockquote styling
+          blockquote: ({ children, ...props }) => (
+            <blockquote className="border-l-4 border-muted-foreground pl-4 my-4 first:mt-0 last:mb-0 italic text-muted-foreground bg-muted/20 py-2 rounded-r" {...props}>
+              {children}
+            </blockquote>
+          ),
+          // Code blocks and inline code
           code({ className, children, ...props }: any) {
             const inline = !className;
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <SyntaxHighlighter style={oneDark as any} language={match[1]} PreTag="div" {...(props as any)}>
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              <div className="my-4 rounded-lg overflow-hidden bg-card border border-border">
+                <SyntaxHighlighter 
+                  style={oneDark as any} 
+                  language={match[1]} 
+                  PreTag="div" 
+                  customStyle={{
+                    margin: 0,
+                    background: 'hsl(var(--card))',
+                    fontSize: '0.875rem',
+                  }}
+                  {...(props as any)}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              </div>
             ) : (
-              <code className="rounded bg-gray-100 px-1 py-0.5 text-sm" {...props}>
+              <code className="rounded bg-card px-2 py-1 text-sm font-mono border border-border text-foreground" {...props}>
                 {children}
               </code>
             );
