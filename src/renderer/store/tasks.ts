@@ -78,6 +78,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       if (response.success && response.data) {
         const newTask = response.data;
         console.log('Task created:', newTask.id, newTask.name, 'with', newTask.repositories.length, 'repos');
+        console.log(
+          'Repository statuses:',
+          newTask.repositories.map((r) => ({ name: r.name, status: r.status }))
+        );
 
         // Add the new task to the tasks list and set it as active
         set((state) => ({

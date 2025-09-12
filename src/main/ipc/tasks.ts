@@ -171,6 +171,10 @@ export function setupTaskHandlers(mainWindow: BrowserWindow): void {
         throw new Error('Task not found');
       }
 
+      // Add a small delay to ensure UI has time to render the initialization state
+      // This is important when worktrees already exist and setup completes instantly
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Setup each repository's worktree
       for (const repo of task.repositories) {
         // Send progress updates to renderer
