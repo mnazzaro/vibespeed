@@ -116,12 +116,9 @@ export const TaskChat: React.FC<TaskChatProps> = ({ task: propTask }) => {
     };
   }, [task.id, updateTask]);
 
-  // Listen for Claude streaming events
   useEffect(() => {
     const handleStreamEvent = (taskId: string, event: SDKMessage) => {
       if (taskId !== task.id) return;
-
-      console.log('Stream event:', event);
 
       addMessage(taskId, event);
 
