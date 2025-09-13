@@ -3,6 +3,7 @@ import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
+import { MakerDMG } from '@electron-forge/maker-dmg';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
@@ -10,11 +11,21 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    // icon: './src/assets/icon', // Uncomment when you have an icon file
+    appBundleId: 'com.vibespeed.app', // Bundle ID for macOS
+    appCategoryType: 'public.app-category.productivity', // macOS app category
+    // osxSign: {}, // Uncomment to enable code signing (will use your keychain certificates)
+    // osxNotarize: undefined, // Set this up later if you want to notarize
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({}),
     new MakerZIP({}, ['darwin']),
+    new MakerDMG({
+      // background: './src/assets/dmg-background.png', // Optional: custom DMG background
+      // icon: './src/assets/icon.icns', // Optional: custom icon for the DMG
+      format: 'ULFO' // macOS 10.11+ compressed format
+    }),
     new MakerRpm({}),
     new MakerDeb({}),
   ],
