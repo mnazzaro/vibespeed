@@ -344,8 +344,13 @@ const claudeAPI = {
     ipcRenderer.on('claude:stream-event', (event, taskId, streamEvent) => callback(taskId, streamEvent));
   },
 
+  onQueryStatusChanged: (callback: (taskId: string, status: 'started' | 'completed' | 'error') => void) => {
+    ipcRenderer.on('claude:query-status', (event, taskId, status) => callback(taskId, status));
+  },
+
   removeClaudeListeners: () => {
     ipcRenderer.removeAllListeners('claude:stream-event');
+    ipcRenderer.removeAllListeners('claude:query-status');
   },
 };
 

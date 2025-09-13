@@ -5,6 +5,7 @@ import { Sidebar } from '../components/Sidebar';
 import { LoginButton } from './components/Auth/LoginButton';
 import { PaneContainer } from './components/Panes/PaneContainer';
 import { TaskView } from './components/Tasks/TaskView';
+import { ClaudeMessageHandler } from './services/claudeMessageHandler';
 import { useAuthStore } from './store/auth';
 import { useTaskStore } from './store/tasks';
 
@@ -15,6 +16,14 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     initialize();
+
+    // Initialize the global Claude message handler
+    const handler = ClaudeMessageHandler.getInstance();
+    handler.initialize(useTaskStore.getState());
+
+    return () => {
+      handler.cleanup();
+    };
   }, []);
 
   // Global keyboard shortcut for creating new tasks
