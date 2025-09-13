@@ -21,15 +21,22 @@ export const TaskView: React.FC<TaskViewProps> = ({ task: propTask }) => {
   // Listen for worktree progress updates
   useEffect(() => {
     const handleProgress = (progress: WorktreeProgress) => {
-      updateWorktreeProgress(progress);
+      // Only update progress for the current task
+      if (task && progress.taskId === task.id) {
+        updateWorktreeProgress(progress);
+      }
     };
 
-    window.electronAPI.tasks.onWorktreeProgress(handleProgress);
+    // Register the listener
+    const removeListener = window.electronAPI.tasks.onWorktreeProgress(handleProgress);
 
     return () => {
-      window.electronAPI.tasks.removeTaskListeners();
+      // Properly remove only this specific listener
+      if (removeListener && typeof removeListener === 'function') {
+        removeListener();
+      }
     };
-  }, [updateWorktreeProgress]);
+  }, [task?.id, updateWorktreeProgress]);
 
   // Clear progress when task changes
   useEffect(() => {
