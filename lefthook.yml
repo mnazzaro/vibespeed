@@ -1,0 +1,91 @@
+# Lefthook configuration
+# https://github.com/evilmartians/lefthook
+
+# COLORS
+colors: true
+
+# HOOKS
+pre-commit:
+  parallel: false
+  commands:
+    # ESLint - auto-fix issues and stage the fixes
+    lint:
+      glob: 'src/**/*.{js,jsx,ts,tsx,mjs}'
+      run: |
+        # Run ESLint with auto-fix on staged files
+        echo "🔍 ESLint: Checking and fixing issues..."
+        
+        # First, run with auto-fix to clean up what we can
+        pnpm exec eslint {staged_files} --fix
+        
+        # Stage any auto-fixed files
+        git add {staged_files} 2>/dev/null || true
+        
+        # Now check if there are any errors (not warnings) remaining
+        if pnpm exec eslint {staged_files} --quiet; then
+          echo "✅ ESLint: No errors found! (warnings are allowed)"
+          exit 0
+        else
+          echo "❌ ESLint: Errors found that couldn't be auto-fixed"
+          echo "Please fix the errors manually and try again."
+          echo "Run 'pnpm exec eslint {staged_files}' to see all issues."
+          exit 1
+        fi
+      stage_fixed: true
+
+    # Prettier - auto-fix formatting and stage the fixes
+    format:
+      glob: '*.{js,jsx,ts,tsx,json,css,md}'
+      run: |
+        echo "🎨 Prettier: Checking and fixing formatting..."
+        # Run Prettier with auto-fix
+        pnpm exec prettier --write {staged_files}
+        # Stage the formatted files
+        git add {staged_files}
+        echo "✅ Prettier: Formatting applied!"
+        exit 0
+      stage_fixed: true
+
+    # Stylelint - auto-fix issues and stage the fixes
+    stylelint:
+      glob: '*.{css,scss}'
+      run: |
+        if [ -z "{staged_files}" ]; then
+          echo "⏭️  Stylelint: No CSS/SCSS files to check"
+          exit 0
+        fi
+        echo "🎨 Stylelint: Checking and fixing styles..."
+        if pnpm exec stylelint {staged_files} --allow-empty-input --fix; then
+          echo "✅ Stylelint: All style checks passed!"
+          # Stage any auto-fixed files
+          git add {staged_files} 2>/dev/null || true
+          exit 0
+        else
+          echo "❌ Stylelint: Issues found that couldn't be auto-fixed"
+          echo "Please fix the remaining issues manually and try again."
+          exit 1
+        fi
+      stage_fixed: true
+
+    # TypeScript type checking (can't auto-fix, just check)
+    typecheck:
+      run: |
+        echo "🔍 TypeScript: Checking types..."
+        if pnpm run type-check; then
+          echo "✅ TypeScript: All type checks passed!"
+          exit 0
+        else
+          echo "❌ TypeScript: Type errors found"
+          echo "Please fix the type errors and try again."
+          exit 1
+        fi
+
+# Skip hooks in CI/CD environments
+skip:
+  - merge
+  - rebase
+
+# Output mode
+output:
+  - summary
+  - success
