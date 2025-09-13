@@ -3,7 +3,6 @@ import { Bot } from 'lucide-react';
 import React, { useRef, useContext } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 import { ToolUsageProvider } from '@/renderer/components/Tasks/TaskChat';
 import {
@@ -101,7 +100,6 @@ const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
             return !inline && match ? (
               <div className="bg-card border-border my-4 overflow-hidden rounded-lg border">
                 <SyntaxHighlighter
-                  style={oneDark as any}
                   language={match[1]}
                   PreTag="div"
                   customStyle={{
