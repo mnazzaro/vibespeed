@@ -189,15 +189,30 @@ const tasksAPI = {
 
   // Event listeners
   onWorktreeProgress: (callback: (progress: WorktreeProgress) => void) => {
-    ipcRenderer.on('task:worktree-progress', (event, progress) => callback(progress));
+    const handler = (event: any, progress: WorktreeProgress) => callback(progress);
+    ipcRenderer.on('task:worktree-progress', handler);
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener('task:worktree-progress', handler);
+    };
   },
 
   onMessageReceived: (callback: (taskId: string, message: SDKMessage) => void) => {
-    ipcRenderer.on('task:message-received', (event, taskId, message) => callback(taskId, message));
+    const handler = (event: any, taskId: string, message: SDKMessage) => callback(taskId, message);
+    ipcRenderer.on('task:message-received', handler);
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener('task:message-received', handler);
+    };
   },
 
   onTaskUpdated: (callback: (taskId: string, task: Task) => void) => {
-    ipcRenderer.on('task:updated', (event, taskId, task) => callback(taskId, task));
+    const handler = (event: any, taskId: string, task: Task) => callback(taskId, task);
+    ipcRenderer.on('task:updated', handler);
+    // Return cleanup function
+    return () => {
+      ipcRenderer.removeListener('task:updated', handler);
+    };
   },
 
   removeTaskListeners: () => {

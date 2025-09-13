@@ -87,9 +87,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           isLoading: false,
         }));
 
-        // Start worktree setup
+        // Start worktree setup after a small delay to ensure listeners are registered
         console.log('Starting worktree setup for task:', newTask.id);
-        window.electronAPI.tasks.setupWorktrees(newTask.id);
+        setTimeout(() => {
+          window.electronAPI.tasks.setupWorktrees(newTask.id);
+        }, 100);
 
         return newTask;
       } else {
@@ -167,6 +169,28 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
 
   selectTask: async (taskId: string) => {
+    // First try to get the task from the backend to ensure we have the latest data
+    try {
+      const response = await window.electronAPI.tasks.get(taskId);
+      if (response.success && response.data) {
+        const freshTask = response.data;
+
+        // Update the task in our store with the fresh data
+        set((state) => ({
+          tasks: state.tasks.map((t) => (t.id === taskId ? freshTask : t)),
+          activeTaskId: taskId,
+          activeTask: freshTask,
+        }));
+
+        // Notify main process
+        await window.electronAPI.tasks.setActive(taskId);
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to get fresh task data:', error);
+    }
+
+    // Fallback to local data if backend fetch fails
     const task = get().tasks.find((t) => t.id === taskId);
     if (!task) return;
 
@@ -356,20 +380,29 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       },
     }));
 
-    // Always update task repository status, not just on ready/error
-    const currentState = get();
-    const task = currentState.tasks.find((t) => t.id === progress.taskId);
+    // Always update task repository status
+    set((state) => {
+      const task = state.tasks.find((t) => t.id === progress.taskId);
 
-    if (task) {
+      if (!task) {
+        console.log(`Store: Task ${progress.taskId} not found`);
+        return state;
+      }
+
       const updatedRepos = task.repositories.map((repo) => {
         if (repo.id === progress.repositoryId) {
-          let newStatus: 'initializing' | 'ready' | 'error' = 'initializing';
+          let newStatus: 'initializing' | 'ready' | 'error' = repo.status;
 
+          // Map progress status to repository status
           if (progress.status === 'ready') {
             newStatus = 'ready';
           } else if (progress.status === 'error') {
             newStatus = 'error';
-          } else if (progress.status === 'cloning' || progress.status === 'creating-worktree') {
+          } else if (
+            progress.status === 'cloning' ||
+            progress.status === 'creating-worktree' ||
+            progress.status === 'checking-out'
+          ) {
             newStatus = 'initializing';
           }
 
@@ -385,14 +418,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
       const updatedTask = { ...task, repositories: updatedRepos };
 
-      // Update both tasks list and active task in a single set call for atomic update
-      set((state) => ({
+      // Return updated state with both tasks list and active task updated
+      return {
+        ...state,
         tasks: state.tasks.map((t) => (t.id === progress.taskId ? updatedTask : t)),
         activeTask: state.activeTaskId === progress.taskId ? updatedTask : state.activeTask,
-      }));
+      };
+    });
 
-      console.log('Store: Task updated with new repo statuses');
-    }
+    console.log('Store: Task updated with new repo statuses');
   },
 
   clearWorktreeProgress: (taskId: string) => {
