@@ -44,9 +44,9 @@ export const InstallationList: React.FC = () => {
                 <Github className="h-3 w-3" />
               </AvatarFallback>
             </Avatar>
-            <span className="truncate">{installation.account.login}</span>
+            <span className="truncate font-mono">{installation.account.login}</span>
             {installation.account.type === 'Organization' && (
-              <span className="text-muted-foreground ml-1 text-xs">(Org)</span>
+              <span className="text-muted-foreground ml-1 font-mono text-xs">(Org)</span>
             )}
           </div>
           <button
