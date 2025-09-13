@@ -1,5 +1,5 @@
-import { Plus, Hash, Archive, Check } from 'lucide-react';
-import React, { useEffect } from 'react';
+import { Plus, Hash, Archive, Check, Loader2 } from 'lucide-react';
+import React, { useEffect, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,12 +10,14 @@ interface TaskListProps {
   onCreateClick: () => void;
 }
 
-export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
-  const { tasks, activeTaskId, selectTask, loadTasks, isLoading } = useTaskStore();
-
-  useEffect(() => {
-    loadTasks();
-  }, []);
+// Component for individual task item to optimize re-renders
+const TaskItem: React.FC<{
+  task: Task;
+  isActive: boolean;
+  onSelect: () => void;
+}> = ({ task, isActive, onSelect }) => {
+  // Only this component re-renders when its specific query status changes
+  const hasActiveQuery = useTaskStore((state) => state.activeQueries.has(task.id));
 
   const getTaskIcon = (status: Task['status']) => {
     switch (status) {
@@ -39,9 +41,40 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
     }
   };
 
-  // Group tasks by status
-  const activeTasks = tasks.filter((t) => t.status === 'active');
-  const completedTasks = tasks.filter((t) => t.status === 'completed');
+  const isCompleted = task.status === 'completed';
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className={cn('w-full justify-start text-left', isActive && 'bg-accent', isCompleted && 'opacity-60')}
+      onClick={onSelect}
+    >
+      <span className={cn('mr-2', getTaskStatusColor(task.status))}>{getTaskIcon(task.status)}</span>
+      <span className={cn('flex-1 truncate', isCompleted && 'line-through')}>{task.name}</span>
+      {hasActiveQuery && <Loader2 className="text-primary mr-1 h-3 w-3 animate-spin" />}
+      {task.status === 'active' && (
+        <span className="text-muted-foreground ml-1 text-xs">{task.repositories.length}</span>
+      )}
+    </Button>
+  );
+};
+
+export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
+  const { tasks, activeTaskId, selectTask, loadTasks, isLoading } = useTaskStore();
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  // Group tasks by status - memoize to avoid recalculation
+  const { activeTasks, completedTasks } = useMemo(
+    () => ({
+      activeTasks: tasks.filter((t) => t.status === 'active'),
+      completedTasks: tasks.filter((t) => t.status === 'completed'),
+    }),
+    [tasks]
+  );
 
   return (
     <div className="space-y-2">
@@ -63,17 +96,12 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
           {activeTasks.length > 0 && (
             <div className="space-y-1">
               {activeTasks.map((task) => (
-                <Button
+                <TaskItem
                   key={task.id}
-                  variant="ghost"
-                  size="sm"
-                  className={cn('w-full justify-start text-left', activeTaskId === task.id && 'bg-accent')}
-                  onClick={() => selectTask(task.id)}
-                >
-                  <span className={cn('mr-2', getTaskStatusColor(task.status))}>{getTaskIcon(task.status)}</span>
-                  <span className="flex-1 truncate">{task.name}</span>
-                  <span className="text-muted-foreground ml-1 text-xs">{task.repositories.length}</span>
-                </Button>
+                  task={task}
+                  isActive={activeTaskId === task.id}
+                  onSelect={() => selectTask(task.id)}
+                />
               ))}
             </div>
           )}
@@ -84,16 +112,12 @@ export const TaskList: React.FC<TaskListProps> = ({ onCreateClick }) => {
               <div className="text-muted-foreground mt-4 mb-1 text-xs font-semibold uppercase">Completed</div>
               <div className="space-y-1">
                 {completedTasks.map((task) => (
-                  <Button
+                  <TaskItem
                     key={task.id}
-                    variant="ghost"
-                    size="sm"
-                    className={cn('w-full justify-start text-left opacity-60', activeTaskId === task.id && 'bg-accent')}
-                    onClick={() => selectTask(task.id)}
-                  >
-                    <span className={cn('mr-2', getTaskStatusColor(task.status))}>{getTaskIcon(task.status)}</span>
-                    <span className="flex-1 truncate line-through">{task.name}</span>
-                  </Button>
+                    task={task}
+                    isActive={activeTaskId === task.id}
+                    onSelect={() => selectTask(task.id)}
+                  />
                 ))}
               </div>
             </>
