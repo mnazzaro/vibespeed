@@ -159,9 +159,25 @@ export class GitManager {
       // Check if worktree already exists
       const worktrees = await git.raw(['worktree', 'list']);
       if (worktrees.includes(taskRepo.worktreePath)) {
-        // Worktree exists, just ensure we're on the right branch
+        // Worktree exists, send progress updates even though setup is quick
+        onProgress?.({
+          taskId,
+          repositoryId: taskRepo.id,
+          status: 'checking-out',
+          message: 'Reusing existing worktree...',
+        });
+
+        // Ensure we're on the right branch
         const worktreeGit = simpleGit(taskRepo.worktreePath);
         await worktreeGit.checkout(taskRepo.taskBranch);
+
+        // Send ready status
+        onProgress?.({
+          taskId,
+          repositoryId: taskRepo.id,
+          status: 'ready',
+          message: 'Worktree ready',
+        });
       } else {
         // Get the actual default branch from remote
         let baseBranch = taskRepo.originalBranch || 'main';
