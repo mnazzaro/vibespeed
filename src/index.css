@@ -155,23 +155,4 @@
     );
     pointer-events: none;
   }
-
-  /* Fix code block line spacing and font rendering in Prism syntax highlighter */
-  pre[class*='language-'] {
-    line-height: 1.5 !important;
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-    text-rendering: optimizelegibility !important;
-  }
-
-  pre[class*='language-'] code {
-    line-height: inherit !important;
-    -webkit-font-smoothing: antialiased !important;
-    -moz-osx-font-smoothing: grayscale !important;
-  }
-
-  /* Ensure no extra spacing between lines in code blocks */
-  .token {
-    display: inline;
-  }
 }
