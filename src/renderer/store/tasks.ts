@@ -17,6 +17,7 @@ interface TaskStore {
     defaultBranch: string;
   }>;
   worktreeProgress: Record<string, WorktreeProgress>;
+  activeQueries: Set<string>; // Track which tasks have running queries
   // Actions
   createTask: (params: CreateTaskParams) => Promise<Task>;
   loadTasks: () => Promise<void>;
@@ -46,6 +47,11 @@ interface TaskStore {
   updateWorktreeProgress: (progress: WorktreeProgress) => void;
   clearWorktreeProgress: (taskId: string) => void;
 
+  // Query tracking
+  hasActiveQuery: (taskId: string) => boolean;
+  setQueryActive: (taskId: string, active: boolean) => void;
+  getActiveQueries: () => Set<string>;
+
   // Utilities
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -61,6 +67,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   isCreatingTask: false,
   selectedReposForNewTask: [],
   worktreeProgress: {},
+  activeQueries: new Set<string>(),
   isLoading: false,
   error: null,
 
@@ -277,11 +284,20 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       messages: [...task.messages, message],
     };
 
-    // Update local state immediately
-    set((state) => ({
-      tasks: state.tasks.map((t) => (t.id === taskId ? updatedTask : t)),
-      activeTask: state.activeTaskId === taskId ? updatedTask : state.activeTask,
-    }));
+    // Update local state immediately - optimize by only updating if task exists
+    set((state) => {
+      // Only map through tasks if we need to update
+      const taskIndex = state.tasks.findIndex((t) => t.id === taskId);
+      if (taskIndex === -1) return state;
+
+      const newTasks = [...state.tasks];
+      newTasks[taskIndex] = updatedTask;
+
+      return {
+        tasks: newTasks,
+        activeTask: state.activeTaskId === taskId ? updatedTask : state.activeTask,
+      };
+    });
 
     // Persist to backend asynchronously (fire and forget)
     window.electronAPI.tasks
@@ -439,6 +455,35 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       });
       return { worktreeProgress: newProgress };
     });
+  },
+
+  // Query tracking
+  hasActiveQuery: (taskId: string) => {
+    return get().activeQueries.has(taskId);
+  },
+
+  setQueryActive: (taskId: string, active: boolean) => {
+    set((state) => {
+      const hasQuery = state.activeQueries.has(taskId);
+
+      // Only update if the state actually changes
+      if (active && !hasQuery) {
+        const newActiveQueries = new Set(state.activeQueries);
+        newActiveQueries.add(taskId);
+        return { activeQueries: newActiveQueries };
+      } else if (!active && hasQuery) {
+        const newActiveQueries = new Set(state.activeQueries);
+        newActiveQueries.delete(taskId);
+        return { activeQueries: newActiveQueries };
+      }
+
+      // No change needed - return the same state
+      return state;
+    });
+  },
+
+  getActiveQueries: () => {
+    return get().activeQueries;
   },
 
   // Utilities

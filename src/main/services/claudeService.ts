@@ -90,6 +90,9 @@ export class ClaudeService {
     options: Partial<Options> = {},
     signal: AbortSignal
   ): Promise<void> {
+    // Emit query started event
+    this.sendStatusEvent(taskId, 'started');
+
     try {
       const sessionId = task.sessionId;
 
@@ -149,7 +152,13 @@ export class ClaudeService {
 
         this.sendEvent(taskId, message);
       }
+    } catch (error) {
+      // Emit error status
+      this.sendStatusEvent(taskId, 'error');
+      throw error;
     } finally {
+      // Emit query completed event
+      this.sendStatusEvent(taskId, 'completed');
       this.activeQueries.delete(taskId);
     }
   }
@@ -160,11 +169,19 @@ export class ClaudeService {
     }
   }
 
+  private sendStatusEvent(taskId: string, status: 'started' | 'completed' | 'error'): void {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send('claude:query-status', taskId, status);
+    }
+  }
+
   public cancelQuery(taskId: string): boolean {
     const controller = this.activeQueries.get(taskId);
     if (controller) {
       controller.abort();
       this.activeQueries.delete(taskId);
+      // Emit completed status when cancelled
+      this.sendStatusEvent(taskId, 'completed');
       return true;
     }
     return false;

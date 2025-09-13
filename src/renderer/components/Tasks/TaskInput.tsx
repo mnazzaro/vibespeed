@@ -37,11 +37,13 @@ const buildClaudeOptions = (planMode: boolean, thinkingLevel: ThinkingLevel, mod
   };
 };
 
-const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, disabled, className }) => {
+const Dropdown: React.FC<DropdownProps> = React.memo(({ value, options, onChange, disabled, className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!isOpen) return; // Only add listener when dropdown is open
+
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -50,7 +52,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, disabled,
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isOpen]); // Only re-register when isOpen changes
 
   const selectedOption = options.find((opt) => opt.value === value);
 
@@ -94,7 +96,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, options, onChange, disabled,
       )}
     </div>
   );
-};
+});
 
 export const TaskInput: React.FC<TaskInputProps> = ({
   value,
@@ -111,27 +113,37 @@ export const TaskInput: React.FC<TaskInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const placeholder = planMode ? 'Ask Claude to make a plan...' : 'Ask Claude anything...';
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleSend = () => {
+  const handleSend = React.useCallback(() => {
     if (!value.trim() || isLoading) return;
 
     onSend({
       ...buildClaudeOptions(planMode, thinkingLevel, model),
     });
-  };
+  }, [value, isLoading, onSend, planMode, thinkingLevel, model]);
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(e.target.value);
-    // Auto-resize textarea
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
-  };
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
+
+  const handleTextareaChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChange(e.target.value);
+      // Auto-resize textarea - use RAF to avoid blocking the main thread
+      requestAnimationFrame(() => {
+        if (e.target) {
+          e.target.style.height = 'auto';
+          e.target.style.height = e.target.scrollHeight + 'px';
+        }
+      });
+    },
+    [onChange]
+  );
 
   // Reset height when value changes externally (e.g., after sending)
   useEffect(() => {
