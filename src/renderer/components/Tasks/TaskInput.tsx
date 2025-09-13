@@ -130,7 +130,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({
     onChange(e.target.value);
     // Auto-resize textarea
     e.target.style.height = 'auto';
-    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+    e.target.style.height = e.target.scrollHeight + 'px';
   };
 
   // Reset height when value changes externally (e.g., after sending)
@@ -141,16 +141,16 @@ export const TaskInput: React.FC<TaskInputProps> = ({
   }, [value]);
 
   return (
-    <div className="relative">
-      {/* Plan mode indicator in the border */}
-      {planMode && (
-        <div className="bg-background absolute -top-3 right-4 z-10 border px-2">
-          <span className="text-primary/70 font-mono text-xs">Planning</span>
-        </div>
-      )}
+    <div className="relative flex min-h-30 flex-col border-t">
+      {/* Textarea container that grows upward */}
+      <div className={cn('bg-card/50 max-h-52 flex-1 overflow-y-auto', planMode && 'border-t-primary/30')}>
+        {/* Plan mode indicator */}
+        {planMode && (
+          <div className="bg-background absolute -top-3 right-4 z-10 border px-2">
+            <span className="text-primary/70 font-mono text-xs">Planning</span>
+          </div>
+        )}
 
-      <div className={cn('bg-card/50 h-30 border-t transition-all duration-200', planMode && 'border-t-primary/30')}>
-        {/* Textarea at the top */}
         <div className="p-3 pb-2">
           <textarea
             ref={textareaRef}
@@ -161,15 +161,17 @@ export const TaskInput: React.FC<TaskInputProps> = ({
             className={cn(
               'w-full resize-none bg-transparent',
               'placeholder:text-muted-foreground focus:outline-none',
-              'min-h-[40px] font-serif'
+              'min-h-11 font-serif'
             )}
             rows={1}
             disabled={disabled || isLoading}
           />
         </div>
+      </div>
 
-        {/* Controls at the bottom */}
-        <div className="flex items-center justify-between border-t px-3 py-2">
+      {/* Controls at the bottom - always visible */}
+      <div className={cn('bg-card/50 border-t transition-all duration-200', planMode && 'border-t-primary/30')}>
+        <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             {/* Thinking Level Selector */}
             <Dropdown
@@ -179,18 +181,18 @@ export const TaskInput: React.FC<TaskInputProps> = ({
               options={[
                 {
                   value: 'default',
-                  label: 'Default',
+                  label: 'Default think',
                 },
                 {
                   value: 'superthink',
-                  label: 'Super',
+                  label: 'Super think',
                 },
                 {
                   value: 'gigathink',
-                  label: 'Giga',
+                  label: 'Giga think',
                 },
               ]}
-              className="h-7 w-[80px]"
+              className="h-7"
             />
 
             {/* Model Selector */}
