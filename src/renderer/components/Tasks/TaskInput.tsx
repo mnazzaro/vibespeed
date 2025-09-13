@@ -192,7 +192,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({
                   label: 'Giga think',
                 },
               ]}
-              className="h-7"
+              className="h-7 min-w-32"
             />
 
             {/* Model Selector */}

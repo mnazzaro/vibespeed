@@ -63,7 +63,7 @@ export const PaneWrapper: React.FC<PaneWrapperProps> = ({ pane }) => {
       {/* Pane Header */}
       <div className="bg-muted/10 flex h-9 items-center justify-between border-b px-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{pane.title || pane.type}</span>
+          <span className="text-sm font-semibold">{pane.title || pane.type}</span>
           {pane.metadata?.badge && (
             <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs">{pane.metadata.badge}</span>
           )}

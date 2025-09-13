@@ -26,7 +26,7 @@ interface TaskMessageStreamProps {
 }
 
 // Component for rendering markdown content
-const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
+export const MarkdownContent: React.FC<{ content: string }> = ({ content }) => {
   return (
     <div className="prose dark:prose-invert my-2 max-w-none">
       <ReactMarkdown
@@ -205,7 +205,7 @@ export const TaskMessageStream: React.FC<TaskMessageStreamProps> = ({ messages }
 
           {/* Main content */}
           <div className="pl-4">
-            <MarkdownContent content={'### User Message:\n' + message} />
+            <MarkdownContent content={'#### User Message:\n' + message} />
           </div>
 
           {/* L-shaped border below */}
